@@ -979,6 +979,7 @@ void NextPlrLevel(int pnum)
 
 	if (sgbControllerActive)
 		FocusOnCharInfo();
+		CalcPlrInv(pnum, TRUE);
 }
 
 void AddPlrExperience(int pnum, int lvl, int exp)
