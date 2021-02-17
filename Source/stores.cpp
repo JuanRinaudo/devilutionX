@@ -2278,7 +2278,7 @@ void S_WBuyEnter()
 			done = FALSE;
 
 			for (i = 0; i < NUM_INV_GRID_ELEM && !done; i++) {
-				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28, FALSE);
+				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28);
 			}
 
 			if (done)
@@ -2591,7 +2591,7 @@ void S_HBuyEnter()
 			done = FALSE;
 			i = 0;
 			for (i = 0; i < NUM_INV_GRID_ELEM && !done; i++) {
-				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28, FALSE);
+				done = SpecialAutoPlace(myplr, i, cursW / 28, cursH / 28);
 			}
 			if (done)
 				StartStore(STORE_CONFIRM);
