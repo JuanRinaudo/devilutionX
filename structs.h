@@ -257,9 +257,9 @@ typedef struct PlayerStruct {
 	int _pManaPer;
 	char _pLevel;
 	char _pMaxLvl;
-	int _pExperience;
-	int _pMaxExp;
-	int _pNextExper;
+	int64_t _pExperience;
+	int64_t _pMaxExp;
+	int64_t _pNextExper;
 	char _pArmorClass;
 	char _pMagResist;
 	char _pFireResist;
@@ -994,6 +994,19 @@ typedef struct TMenuItem {
 	void (*fnMenu)(BOOL); /* fix, should have one arg */
 } TMenuItem;
 
+//////////////////////////////////////////////////
+// juaneditor
+//////////////////////////////////////////////////
+
+// TPDEF PTR FCN VOID TMenuFcn
+
+typedef struct JMenuItem {
+	DWORD dwFlags;
+	const char *pszStr;
+	void (*fnMenu)(void*);
+} JMenuItem;
+
+
 // TPDEF PTR FCN VOID TMenuUpdateFcn
 
 //////////////////////////////////////////////////
@@ -1065,10 +1078,10 @@ typedef struct ThemeStruct {
 // inv
 //////////////////////////////////////////////////
 
-typedef struct InvXY {
+typedef struct Vec2 {
 	int X;
 	int Y;
-} InvXY;
+} Vec2;
 
 //////////////////////////////////////////////////
 // diabloui

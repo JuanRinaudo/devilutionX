@@ -29,6 +29,8 @@ extern BOOL UniqueItemFlag[128];
 extern int auricGold;
 extern int numitems;
 
+extern int uniqueItemCount;
+
 int get_ring_max_value(int i);
 int get_bow_max_value(int i);
 int get_staff_max_value(int i);

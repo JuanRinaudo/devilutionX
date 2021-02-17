@@ -20,10 +20,10 @@
 #endif
 
 #ifndef DEFAULT_WIDTH
-#define DEFAULT_WIDTH 640
+#define DEFAULT_WIDTH 800
 #endif
 #ifndef DEFAULT_HEIGHT
-#define DEFAULT_HEIGHT 480
+#define DEFAULT_HEIGHT 600
 #endif
 
 namespace dvl {
@@ -137,6 +137,14 @@ bool SpawnWindow(const char *lpWindowName)
 	DvlIntSetting("width", &width);
 	int height = DEFAULT_HEIGHT;
 	DvlIntSetting("height", &height);
+	
+	if (width < DEFAULT_WIDTH) {
+		width = DEFAULT_WIDTH;
+	}
+	if (height < DEFAULT_HEIGHT) {
+		height = DEFAULT_HEIGHT;
+	}
+
 	BOOL integerScalingEnabled = false;
 	DvlIntSetting("integer scaling", &integerScalingEnabled);
 
@@ -261,6 +269,39 @@ bool OutputRequiresScaling()
 #else // SDL2, scaling handled by renderer.
 	return false;
 #endif
+}
+
+void RescaleWindowSize(int newWidth, int newHeight)
+{
+	BOOL integerScalingEnabled = false;
+	DvlIntSetting("integer scaling", &integerScalingEnabled);
+	
+	BOOL upscale = true;
+	DvlIntSetting("upscale", &upscale);
+	BOOL oar = false;
+	DvlIntSetting("original aspect ratio", &oar);
+
+	if (upscale && !oar) {
+		CalculatePreferdWindowSize(newWidth, newHeight, integerScalingEnabled);
+	}
+	AdjustToScreenGeometry(newWidth, newHeight);
+	
+	SDL_SetWindowSize(ghMainWnd, newWidth, newHeight);
+	
+	SDL_DestroyTexture(texture);
+	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STREAMING, newWidth, newHeight);
+	
+	if (integerScalingEnabled && SDL_RenderSetIntegerScale(renderer, SDL_TRUE) < 0) {
+		ErrSdl();
+	}
+
+	if (SDL_RenderSetLogicalSize(renderer, newWidth, newHeight) <= -1) {
+		ErrSdl();
+	}
+
+	dx_reinit();
+
+	CalcViewportGeometry();
 }
 
 void ScaleOutputRect(SDL_Rect *rect)

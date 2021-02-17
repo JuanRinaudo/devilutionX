@@ -62,7 +62,7 @@ WORD tick_delay = 50;
  * Specifies whether to give the game exclusive access to the
  * screen, as needed for efficient rendering in fullscreen mode.
  */
-BOOL fullscreen = TRUE;
+BOOL fullscreen = FALSE;
 int showintrodebug = 1;
 #ifdef _DEBUG
 int questdebug = -1;
@@ -672,6 +672,8 @@ static BOOL LeftMouseDown(int wParam)
 				stream_stop();
 			} else if (chrflag && MouseX < SPANEL_WIDTH && MouseY < SPANEL_HEIGHT) {
 				CheckChrBtns();
+			} else if (juaneditorflag && MouseX < SPANEL_WIDTH && MouseY < SPANEL_HEIGHT) {
+				CheckJuanEditorBtns();
 			} else if (invflag && MouseX > RIGHT_PANEL && MouseY < SPANEL_HEIGHT) {
 				if (!dropGoldFlag)
 					CheckInvItem();
@@ -898,6 +900,7 @@ static void PressKey(int vkey)
 		} else {
 			invflag = FALSE;
 			chrflag = FALSE;
+			juaneditorflag = FALSE;
 			sbookflag = FALSE;
 			spselflag = FALSE;
 			if (qtextflag && leveltype == DTYPE_TOWN) {
@@ -1020,6 +1023,7 @@ static void PressKey(int vkey)
 		helpflag = FALSE;
 		invflag = FALSE;
 		chrflag = FALSE;
+		juaneditorflag = FALSE;
 		sbookflag = FALSE;
 		spselflag = FALSE;
 		if (qtextflag && leveltype == DTYPE_TOWN) {
@@ -1031,6 +1035,13 @@ static void PressKey(int vkey)
 		msgdelay = 0;
 		gamemenu_off();
 		doom_close();
+	}
+}
+
+static void TryToUseBeltItem(int index)
+{
+	if (plr[myplr].SpdList[index]._itype != ITYPE_NONE && plr[myplr].SpdList[index]._itype != ITYPE_GOLD) {
+		UseInvItem(myplr, INVITEM_BELT_FIRST + index);
 	}
 }
 
@@ -1087,6 +1098,7 @@ static void PressChar(WPARAM vkey)
 	case 'c':
 		if (stextflag == STORE_NONE) {
 			questlog = FALSE;
+			juaneditorflag = FALSE;
 			chrflag = !chrflag;
 			if (!chrflag || invflag) {
 				if (MouseX > 160 && MouseY < PANEL_TOP && PANELS_COVER) {
@@ -1103,6 +1115,7 @@ static void PressChar(WPARAM vkey)
 	case 'q':
 		if (stextflag == STORE_NONE) {
 			chrflag = FALSE;
+			juaneditorflag = FALSE;
 			if (!questlog) {
 				StartQuestlog();
 			} else {
@@ -1160,57 +1173,35 @@ static void PressChar(WPARAM vkey)
 		return;
 	case '!':
 	case '1':
-		if (plr[myplr].SpdList[0]._itype != ITYPE_NONE && plr[myplr].SpdList[0]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST);
-		}
+		TryToUseBeltItem(0);
 		return;
 	case '@':
 	case '2':
-		if (plr[myplr].SpdList[1]._itype != ITYPE_NONE && plr[myplr].SpdList[1]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 1);
-		}
+		TryToUseBeltItem(1);
 		return;
 	case '#':
 	case '3':
-		if (plr[myplr].SpdList[2]._itype != ITYPE_NONE && plr[myplr].SpdList[2]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 2);
-		}
+		TryToUseBeltItem(2);
 		return;
 	case '$':
 	case '4':
-		if (plr[myplr].SpdList[3]._itype != ITYPE_NONE && plr[myplr].SpdList[3]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 3);
-		}
+		TryToUseBeltItem(3);
 		return;
 	case '%':
 	case '5':
-		if (plr[myplr].SpdList[4]._itype != ITYPE_NONE && plr[myplr].SpdList[4]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 4);
-		}
+		TryToUseBeltItem(4);
 		return;
 	case '^':
 	case '6':
-		if (plr[myplr].SpdList[5]._itype != ITYPE_NONE && plr[myplr].SpdList[5]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 5);
-		}
+		TryToUseBeltItem(5);
 		return;
 	case '&':
 	case '7':
-		if (plr[myplr].SpdList[6]._itype != ITYPE_NONE && plr[myplr].SpdList[6]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 6);
-		}
+		TryToUseBeltItem(6);
 		return;
 	case '*':
 	case '8':
-#ifdef _DEBUG
-		if (debug_mode_key_inverted_v || debug_mode_key_w) {
-			NetSendCmd(TRUE, CMD_CHEAT_EXPERIENCE);
-			return;
-		}
-#endif
-		if (plr[myplr].SpdList[7]._itype != ITYPE_NONE && plr[myplr].SpdList[7]._itype != ITYPE_GOLD) {
-			UseInvItem(myplr, INVITEM_BELT_FIRST + 7);
-		}
+		TryToUseBeltItem(7);
 		return;
 #ifdef _DEBUG
 	case ')':
@@ -1258,6 +1249,14 @@ static void PressChar(WPARAM vkey)
 		return;
 	case 'd':
 		PrintDebugPlayer(FALSE);
+		return;
+	case 'j':
+	case 'J':
+#ifdef _DEBUG
+		chrflag = FALSE;
+		questlog = FALSE;
+		juaneditorflag = !juaneditorflag;
+#endif
 		return;
 	case 'L':
 	case 'l':
@@ -1778,6 +1777,8 @@ void LoadGameLevel(BOOL firstflag, int lvldir)
 	InitLightMax();
 	IncProgress();
 	IncProgress();
+
+	InitJuanEditor();
 
 	if (firstflag) {
 		InitControlPan();

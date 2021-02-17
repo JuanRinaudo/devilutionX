@@ -192,6 +192,7 @@ add_library(devilution STATIC
   Source/capture.cpp
   Source/codec.cpp
   Source/control.cpp
+  Source/juaneditor.cpp
   Source/cursor.cpp
   Source/dead.cpp
   Source/debug.cpp

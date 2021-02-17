@@ -173,7 +173,7 @@ static int gmenu_get_lfont(TMenuItem *pItem)
 	int i;
 	BYTE c;
 
-	if (pItem->dwFlags & GMENU_SLIDER)
+	if (pItem->dwFlags & GMENU_SLIDER | pItem->dwFlags & GMENU_RESOLUTION)
 		return 490;
 	text = pItem->pszStr;
 	i = 0;
@@ -198,6 +198,12 @@ static void gmenu_draw_menu_item(TMenuItem *pItem, int y)
 		pos = step * 256 / nSteps;
 		gmenu_clear_buffer(x + 2 + PANEL_LEFT, y - 12, pos + 13, 28);
 		CelDraw(x + 2 + pos + PANEL_LEFT, y - 12, option_cel, 1, 27);
+	}
+	if (pItem->dwFlags & GMENU_RESOLUTION) {
+		tempstr[0] = 0;
+		sprintf(tempstr, "%dx%d", screenWidth, screenHeight);
+		x = 16 + w / 2 + SCREEN_X;
+		gmenu_print_text(x + PANEL_LEFT, y, tempstr);
 	}
 	x = SCREEN_WIDTH / 2 - w / 2 + SCREEN_X;
 	light_table_index = (pItem->dwFlags & GMENU_ENABLED) ? 0 : 15;

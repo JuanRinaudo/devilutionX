@@ -24,6 +24,8 @@ int auricGold = 10000;
 int numitems;
 int gnNumGetRecords;
 
+int uniqueItemCount;
+
 /* data */
 
 int OilLevels[] = { 1, 10, 1, 10, 4, 1, 5, 17, 1, 10 };
@@ -616,10 +618,22 @@ static void items_42390F()
 	SpawnQuestItem(id, x, y, 0, 1);
 }
 
+int GetUniqueCount()
+{
+	int i = 0;
+	while ((UniqueItemList + i)->UIItemId != UITYPE_INVALID) {
+		i++;
+	}
+
+	return i;
+}
+
 void InitItems()
 {
 	int i;
 	long s;
+
+	uniqueItemCount = GetUniqueCount();
 
 	GetItemAttrs(0, IDI_GOLD, 1);
 	golditem = item[0];
@@ -924,7 +938,7 @@ void CalcPlrItemVals(int p, BOOL Loadgfx)
 	} else if (plr[p]._pClass == PC_ROGUE || plr[p]._pClass == PC_MONK || plr[p]._pClass == PC_BARD) {
 		vadd += vadd >> 1;
 	}
-	ihp += (vadd << 6); // BUGFIX: blood boil can cause negative shifts here (see line 757)
+	ihp += (vadd << HPMANASHIFT); // BUGFIX: blood boil can cause negative shifts here (see line 757)
 
 	if (plr[p]._pClass == PC_SORCERER) {
 		madd <<= 1;
@@ -934,14 +948,14 @@ void CalcPlrItemVals(int p, BOOL Loadgfx)
 	} else if (plr[p]._pClass == PC_BARD) {
 		madd += (madd >> 2) + (madd >> 1);
 	}
-	imana += (madd << 6);
+	imana += (madd << HPMANASHIFT);
 
 	plr[p]._pHitPoints = ihp + plr[p]._pHPBase;
 	plr[p]._pMaxHP = ihp + plr[p]._pMaxHPBase;
 	if (plr[p]._pHitPoints > plr[p]._pMaxHP)
 		plr[p]._pHitPoints = plr[p]._pMaxHP;
 
-	if (p == myplr && (plr[p]._pHitPoints >> 6) <= 0) {
+	if (p == myplr && (plr[p]._pHitPoints >> HPMANASHIFT) <= 0) {
 		SetPlayerHitPoints(p, 0);
 	}
 
@@ -2055,17 +2069,17 @@ void SaveItemPower(int i, int power, int param1, int param2, int minval, int max
 		item[i]._iPLGetHit -= r;
 		break;
 	case IPL_LIFE:
-		item[i]._iPLHP += r << 6;
+		item[i]._iPLHP += r << HPMANASHIFT;
 		break;
 	case IPL_LIFE_CURSE:
-		item[i]._iPLHP -= r << 6;
+		item[i]._iPLHP -= r << HPMANASHIFT;
 		break;
 	case IPL_MANA:
-		item[i]._iPLMana += r << 6;
+		item[i]._iPLMana += r << HPMANASHIFT;
 		drawmanaflag = TRUE;
 		break;
 	case IPL_MANA_CURSE:
-		item[i]._iPLMana -= r << 6;
+		item[i]._iPLMana -= r << HPMANASHIFT;
 		drawmanaflag = TRUE;
 		break;
 	case IPL_DUR:
@@ -2272,14 +2286,14 @@ void SaveItemPower(int i, int power, int param1, int param2, int minval, int max
 		item[i]._iDamAcFlags |= 0x40;
 		break;
 	case IPL_MANATOLIFE:
-		r2 = ((plr[myplr]._pMaxManaBase >> 6) * 50 / 100);
-		item[i]._iPLMana -= (r2 << 6);
-		item[i]._iPLHP += (r2 << 6);
+		r2 = ((plr[myplr]._pMaxManaBase >> HPMANASHIFT) * 50 / 100);
+		item[i]._iPLMana -= (r2 << HPMANASHIFT);
+		item[i]._iPLHP += (r2 << HPMANASHIFT);
 		break;
 	case IPL_LIFETOMANA:
-		r2 = ((plr[myplr]._pMaxHPBase >> 6) * 40 / 100);
-		item[i]._iPLHP -= (r2 << 6);
-		item[i]._iPLMana += (r2 << 6);
+		r2 = ((plr[myplr]._pMaxHPBase >> HPMANASHIFT) * 40 / 100);
+		item[i]._iPLHP -= (r2 << HPMANASHIFT);
+		item[i]._iPLMana += (r2 << HPMANASHIFT);
 		break;
 	}
 	if (item[i]._iVAdd1 || item[i]._iVMult1) {
@@ -3832,11 +3846,11 @@ void PrintItemPower(char plidx, ItemStruct *x)
 		break;
 	case IPL_LIFE:
 	case IPL_LIFE_CURSE:
-		sprintf(tempstr, "Hit Points : %+i", x->_iPLHP >> 6);
+		sprintf(tempstr, "Hit Points : %+i", x->_iPLHP >> HPMANASHIFT);
 		break;
 	case IPL_MANA:
 	case IPL_MANA_CURSE:
-		sprintf(tempstr, "Mana : %+i", x->_iPLMana >> 6);
+		sprintf(tempstr, "Mana : %+i", x->_iPLMana >> HPMANASHIFT);
 		break;
 	case IPL_DUR:
 		strcpy(tempstr, "high durability");
@@ -4279,7 +4293,7 @@ void UseItem(int p, int Mid, int spl)
 	case IMISC_HEAL:
 	case IMISC_FOOD:
 		j = plr[p]._pMaxHP >> 8;
-		l = ((j >> 1) + random_(39, j)) << 6;
+		l = ((j >> 1) + random_(39, j)) << HPMANASHIFT;
 		if (plr[p]._pClass == PC_WARRIOR || plr[p]._pClass == PC_BARBARIAN)
 			l <<= 1;
 		if (plr[p]._pClass == PC_ROGUE || plr[p]._pClass == PC_MONK || plr[p]._pClass == PC_BARD)
@@ -4299,7 +4313,7 @@ void UseItem(int p, int Mid, int spl)
 		break;
 	case IMISC_MANA:
 		j = plr[p]._pMaxMana >> 8;
-		l = ((j >> 1) + random_(40, j)) << 6;
+		l = ((j >> 1) + random_(40, j)) << HPMANASHIFT;
 		if (plr[p]._pClass == PC_SORCERER)
 			l <<= 1;
 		if (plr[p]._pClass == PC_ROGUE || plr[p]._pClass == PC_MONK || plr[p]._pClass == PC_BARD)
@@ -4345,7 +4359,7 @@ void UseItem(int p, int Mid, int spl)
 		break;
 	case IMISC_REJUV:
 		j = plr[p]._pMaxHP >> 8;
-		l = ((j >> 1) + random_(39, j)) << 6;
+		l = ((j >> 1) + random_(39, j)) << HPMANASHIFT;
 		if (plr[p]._pClass == PC_WARRIOR || plr[p]._pClass == PC_BARBARIAN)
 			l <<= 1;
 		if (plr[p]._pClass == PC_ROGUE)
@@ -4358,7 +4372,7 @@ void UseItem(int p, int Mid, int spl)
 			plr[p]._pHPBase = plr[p]._pMaxHPBase;
 		drawhpflag = TRUE;
 		j = plr[p]._pMaxMana >> 8;
-		l = ((j >> 1) + random_(40, j)) << 6;
+		l = ((j >> 1) + random_(40, j)) << HPMANASHIFT;
 		if (plr[p]._pClass == PC_SORCERER)
 			l <<= 1;
 		if (plr[p]._pClass == PC_ROGUE)
@@ -4421,10 +4435,10 @@ void UseItem(int p, int Mid, int spl)
 		plr[p]._pMemSpells |= SPELLBIT(spl);
 		if (plr[p]._pSplLvl[spl] < MAX_SPELL_LEVEL)
 			plr[p]._pSplLvl[spl]++;
-		plr[p]._pMana += spelldata[spl].sManaCost << 6;
+		plr[p]._pMana += spelldata[spl].sManaCost << HPMANASHIFT;
 		if (plr[p]._pMana > plr[p]._pMaxMana)
 			plr[p]._pMana = plr[p]._pMaxMana;
-		plr[p]._pManaBase += spelldata[spl].sManaCost << 6;
+		plr[p]._pManaBase += spelldata[spl].sManaCost << HPMANASHIFT;
 		if (plr[p]._pManaBase > plr[p]._pMaxManaBase)
 			plr[p]._pManaBase = plr[p]._pMaxManaBase;
 		if (p == myplr)
@@ -4680,7 +4694,7 @@ static void SpawnOnePremium(int i, int plvl, int myplr)
 
 	holditem = item[0];
 
-	int ivalue;
+	int ivalue = 0;
 	int count = 0;
 
 	int strength = get_max_strength(plr[myplr]._pClass);
@@ -5005,7 +5019,7 @@ void SpawnBoy(int lvl)
 {
 	int itype;
 
-	int ivalue;
+	int ivalue = 0;
 	int count = 0;
 
 	int strength = get_max_strength(plr[myplr]._pClass);

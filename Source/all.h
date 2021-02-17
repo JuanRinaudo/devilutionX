@@ -23,6 +23,7 @@
 #include "capture.h"
 #include "codec.h"
 #include "control.h"
+#include "juaneditor.h"
 #include "cursor.h"
 #include "dead.h"
 #include "debug.h"

@@ -11,6 +11,7 @@ BYTE sgbNextTalkSave;
 BYTE sgbTalkSavePos;
 BYTE *pDurIcons;
 BYTE *pChrButtons;
+BOOL drawExpFlag;
 BOOL drawhpflag;
 BOOL dropGoldFlag;
 BOOL panbtn[8];
@@ -567,6 +568,46 @@ void PrintChar(int sx, int sy, int nCel, char col)
 	CelDrawLight(sx, sy, pPanelText, nCel, 13, tbl);
 }
 
+/**
+ * @brief Render text string to back buffer
+ * @param x Screen coordinate
+ * @param y Screen coordinate
+ * @param endX End of line in screen coordinate
+ * @param pszStr String to print, in Windows-1252 encoding
+ * @param col text_color color value
+ * @param base Letter spacing
+ */
+static void MY_PlrStringXY(int x, int y, int endX, const char *pszStr, char col, int base)
+{
+	BYTE c;
+	const char *tmp;
+	int sx, sy, screen_x, line, widthOffset;
+
+	sx = x + SCREEN_X;
+	sy = y + SCREEN_Y;
+	widthOffset = endX - x + 1;
+	line = 0;
+	screen_x = 0;
+	tmp = pszStr;
+	while (*tmp) {
+		c = gbFontTransTbl[(BYTE)*tmp++];
+		screen_x += fontkern[fontframe[c]] + base;
+	}
+	if (screen_x < widthOffset)
+		line = (widthOffset - screen_x) >> 1;
+	sx += line;
+	while (*pszStr) {
+		c = gbFontTransTbl[(BYTE)*pszStr++];
+		c = fontframe[c];
+		line += fontkern[c] + base;
+		if (c) {
+			if (line < widthOffset)
+				PrintChar(sx, sy, c, col);
+		}
+		sx += fontkern[c] + base;
+	}
+}
+
 void AddPanelString(const char *str, BOOL just)
 {
 	strcpy(panelstr[pnumlines], str);
@@ -714,6 +755,9 @@ void UpdateLifeFlask()
 		SetFlaskHeight(pLifeBuff, 16, 85 - filled, 96 + PANEL_X, PANEL_Y);
 	if (filled != 0)
 		DrawPanelBox(96, 85 - filled, 88, filled, 96 + PANEL_X, PANEL_Y + 69 - filled);
+
+	sprintf(tempstr, "%d/%d", plr[myplr]._pHitPoints >> HPMANASHIFT, plr[myplr]._pMaxHP >> HPMANASHIFT);
+	MY_PlrStringXY(PANEL_X - 50, PANEL_Y - 180, PANEL_X + 200, tempstr, COL_RED, 1);
 }
 
 void DrawManaFlask()
@@ -775,8 +819,40 @@ void UpdateManaFlask()
 		SetFlaskHeight(pManaBuff, 16, 85 - filled, PANEL_X + 464, PANEL_Y);
 	if (filled != 0)
 		DrawPanelBox(464, 85 - filled, 88, filled, PANEL_X + 464, PANEL_Y + 69 - filled);
+	
+	sprintf(tempstr, "%d/%d", plr[myplr]._pMana >> HPMANASHIFT, plr[myplr]._pMaxMana >> HPMANASHIFT);
+	MY_PlrStringXY(PANEL_X + 315, PANEL_Y - 180, PANEL_X + 565, tempstr, COL_BLUE, 1);
 
 	DrawSpell();
+}
+
+void UpdateExpBar()
+{
+	if (plr[myplr]._pLevel == MAXCHARLEVEL - 1) {
+		return;
+	}
+
+	BYTE *dst;
+
+	double experiencePercent = (double)plr[myplr]._pExperience / (double)plr[myplr]._pNextExper;
+
+	int X = SCREEN_WIDTH / 2 - 125 + BORDER_LEFT;
+	int Y = PANEL_Y - 161 + SCREEN_Y;
+	int W = 250 * experiencePercent;
+	int H = 3;
+
+	dst = &gpBuffer[X + BUFFER_WIDTH * Y];
+
+	int wdt, hgt;
+
+	for (hgt = H; hgt; hgt--, dst -= BUFFER_WIDTH + W) {
+		for (wdt = W; wdt; wdt--) {
+			*dst++ = PAL16_YELLOW;
+		}
+	}
+	
+	sprintf(tempstr, "%" PRIu64 "/%" PRIu64, plr[myplr]._pExperience, plr[myplr]._pNextExper);
+	MY_PlrStringXY(SCREEN_WIDTH / 2 - 100, PANEL_Y - 170, SCREEN_WIDTH / 2 + 100, tempstr, COL_GOLD, 1);
 }
 
 void InitControlPan()
@@ -840,6 +916,7 @@ void InitControlPan()
 	strcpy(infostr, "");
 	ClearPanel();
 	drawhpflag = TRUE;
+	drawExpFlag = TRUE;
 	drawmanaflag = TRUE;
 	chrflag = FALSE;
 	spselflag = FALSE;
@@ -1347,7 +1424,7 @@ void DrawInfoBox()
 			ClearPanel();
 			sprintf(tempstr, "%s, Level : %i", ClassStrTblOld[plr[pcursplr]._pClass], plr[pcursplr]._pLevel);
 			AddPanelString(tempstr, TRUE);
-			sprintf(tempstr, "Hit Points %i of %i", plr[pcursplr]._pHitPoints >> 6, plr[pcursplr]._pMaxHP >> 6);
+			sprintf(tempstr, "Hit Points %i of %i", plr[pcursplr]._pHitPoints >> HPMANASHIFT, plr[pcursplr]._pMaxHP >> HPMANASHIFT);
 			AddPanelString(tempstr, TRUE);
 		}
 	}
@@ -1372,50 +1449,10 @@ void PrintGameStr(int x, int y, const char *str, int color)
 	}
 }
 
-/**
- * @brief Render text string to back buffer
- * @param x Screen coordinate
- * @param y Screen coordinate
- * @param endX End of line in screen coordinate
- * @param pszStr String to print, in Windows-1252 encoding
- * @param col text_color color value
- * @param base Letter spacing
- */
-static void MY_PlrStringXY(int x, int y, int endX, const char *pszStr, char col, int base)
-{
-	BYTE c;
-	const char *tmp;
-	int sx, sy, screen_x, line, widthOffset;
-
-	sx = x + SCREEN_X;
-	sy = y + SCREEN_Y;
-	widthOffset = endX - x + 1;
-	line = 0;
-	screen_x = 0;
-	tmp = pszStr;
-	while (*tmp) {
-		c = gbFontTransTbl[(BYTE)*tmp++];
-		screen_x += fontkern[fontframe[c]] + base;
-	}
-	if (screen_x < widthOffset)
-		line = (widthOffset - screen_x) >> 1;
-	sx += line;
-	while (*pszStr) {
-		c = gbFontTransTbl[(BYTE)*pszStr++];
-		c = fontframe[c];
-		line += fontkern[c] + base;
-		if (c) {
-			if (line < widthOffset)
-				PrintChar(sx, sy, c, col);
-		}
-		sx += fontkern[c] + base;
-	}
-}
-
 void DrawChr()
 {
 	char col;
-	char chrstr[64];
+	char chrstr[256];
 	int pc, mindam, maxdam;
 
 	CelDraw(SCREEN_X, 351 + SCREEN_Y, pChrPanel, 1, SPANEL_WIDTH);
@@ -1426,14 +1463,14 @@ void DrawChr()
 	sprintf(chrstr, "%i", plr[myplr]._pLevel);
 	ADD_PlrStringXY(66, 69, 109, chrstr, COL_WHITE);
 
-	sprintf(chrstr, "%li", plr[myplr]._pExperience);
+	sprintf(chrstr, "%" PRIu64, plr[myplr]._pExperience);
 	ADD_PlrStringXY(216, 69, 300, chrstr, COL_WHITE);
 
 	if (plr[myplr]._pLevel == MAXCHARLEVEL - 1) {
 		strcpy(chrstr, "None");
 		col = COL_GOLD;
 	} else {
-		sprintf(chrstr, "%li", plr[myplr]._pNextExper);
+		sprintf(chrstr, "%" PRIu64, plr[myplr]._pNextExper);
 		col = COL_WHITE;
 	}
 	ADD_PlrStringXY(216, 97, 300, chrstr, col);
@@ -1605,22 +1642,22 @@ void DrawChr()
 		col = COL_BLUE;
 	else
 		col = COL_WHITE;
-	sprintf(chrstr, "%i", plr[myplr]._pMaxHP >> 6);
+	sprintf(chrstr, "%i", plr[myplr]._pMaxHP >> HPMANASHIFT);
 	ADD_PlrStringXY(95, 304, 126, chrstr, col);
 	if (plr[myplr]._pHitPoints != plr[myplr]._pMaxHP)
 		col = COL_RED;
-	sprintf(chrstr, "%i", plr[myplr]._pHitPoints >> 6);
+	sprintf(chrstr, "%i", plr[myplr]._pHitPoints >> HPMANASHIFT);
 	ADD_PlrStringXY(143, 304, 174, chrstr, col);
 
 	if (plr[myplr]._pMaxMana > plr[myplr]._pMaxManaBase)
 		col = COL_BLUE;
 	else
 		col = COL_WHITE;
-	sprintf(chrstr, "%i", plr[myplr]._pMaxMana >> 6);
+	sprintf(chrstr, "%i", plr[myplr]._pMaxMana >> HPMANASHIFT);
 	ADD_PlrStringXY(95, 332, 126, chrstr, col);
 	if (plr[myplr]._pMana != plr[myplr]._pMaxMana)
 		col = COL_RED;
-	sprintf(chrstr, "%i", plr[myplr]._pMana >> 6);
+	sprintf(chrstr, "%i", plr[myplr]._pMana >> HPMANASHIFT);
 	ADD_PlrStringXY(143, 332, 174, chrstr, col);
 }
 
@@ -1767,7 +1804,7 @@ void DrawDurIcon()
 	bool hasRoomUnderPanels = SCREEN_HEIGHT >= SPANEL_HEIGHT + PANEL_HEIGHT + 16 + 32 + 16;
 
 	if (!hasRoomBetweenPanels && !hasRoomUnderPanels) {
-		if ((chrflag || questlog) && (invflag || sbookflag))
+		if ((chrflag || questlog || juaneditorflag) && (invflag || sbookflag))
 			return;
 	}
 
@@ -1918,7 +1955,7 @@ void DrawSpellBook()
 				sprintf(tempstr, "Staff (%i charges)", plr[myplr].InvBody[INVLOC_HAND_LEFT]._iCharges);
 				break;
 			default:
-				mana = GetManaAmount(myplr, sn) >> 6;
+				mana = GetManaAmount(myplr, sn) >> HPMANASHIFT;
 				GetDamageAmt(sn, &min, &max);
 				if (min != -1) {
 					sprintf(tempstr, "Mana: %i  Dam: %i - %i", mana, min, max);
@@ -2014,7 +2051,7 @@ void control_drop_gold(char vkey)
 {
 	char input[6];
 
-	if (plr[myplr]._pHitPoints >> 6 <= 0) {
+	if (plr[myplr]._pHitPoints >> HPMANASHIFT <= 0) {
 		dropGoldFlag = FALSE;
 		dropGoldValue = 0;
 		return;

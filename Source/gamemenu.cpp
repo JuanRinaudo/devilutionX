@@ -5,6 +5,7 @@
  * Implementation of the in-game menu functions.
  */
 #include "all.h"
+#include "../SourceX/display.h"
 #include "../3rdParty/Storm/Source/storm.h"
 
 DEVILUTION_BEGIN_NAMESPACE
@@ -37,16 +38,27 @@ TMenuItem sgMultiMenu[] = {
 TMenuItem sgOptionsMenu[] = {
 	// clang-format off
 //	  dwFlags,                      pszStr,          fnMenu
-	{ GMENU_ENABLED | GMENU_SLIDER, NULL,            &gamemenu_music_volume  },
-	{ GMENU_ENABLED | GMENU_SLIDER, NULL,            &gamemenu_sound_volume  },
-	{ GMENU_ENABLED | GMENU_SLIDER, "Gamma",         &gamemenu_gamma         },
-//	{ GMENU_ENABLED               , NULL,            &gamemenu_color_cycling },
-	{ GMENU_ENABLED | GMENU_SLIDER, "Speed",         &gamemenu_speed         },
-//	{ GMENU_ENABLED | GMENU_SLIDER, NULL,            &gamemenu_loadjog       },
-	{ GMENU_ENABLED               , "Previous Menu", &gamemenu_previous      },
-	{ GMENU_ENABLED               , NULL,            NULL                    },
+	{ GMENU_ENABLED | GMENU_SLIDER     , NULL,            &gamemenu_music_volume  },
+	{ GMENU_ENABLED | GMENU_SLIDER     , NULL,            &gamemenu_sound_volume  },
+	{ GMENU_ENABLED | GMENU_SLIDER     , "Gamma",         &gamemenu_gamma         },
+	{ GMENU_ENABLED | GMENU_SLIDER     , "Speed",         &gamemenu_speed         },
+	{ GMENU_ENABLED                    , "Fullscreen",    &gamemenu_fullscreen    },
+	{ GMENU_ENABLED | GMENU_RESOLUTION , "Screen",        &gamemenu_resolution    },
+	{ GMENU_ENABLED                    , "Previous Menu", &gamemenu_previous      },
+//	{ GMENU_ENABLED					   , NULL,            &gamemenu_color_cycling },
+//	{ GMENU_ENABLED | GMENU_SLIDER     , NULL,            &gamemenu_loadjog       },
+	{ GMENU_ENABLED                    , NULL,            NULL                    },
 	// clang-format on
 };
+Vec2 sgResolutions[] = {
+	// clang-format off
+	{ 800, 600 },
+	{ 960, 720 },
+	{ 1280, 960 },
+	{ 1440, 1080 }
+	// clang-format on
+};
+int selectedResolution;
 /** Specifies the menu names for music enabled and disabled. */
 const char *const music_toggle_names[] = {
 	"Music",
@@ -85,6 +97,19 @@ static void gamemenu_update_multi(TMenuItem *pMenuItems)
 
 void gamemenu_on()
 {
+	int width = 0;
+	int height = 0;
+	SRegLoadValue("devilutionx", "width", 0, &width);
+	SRegLoadValue("devilutionx", "height", 0, &height);
+
+	selectedResolution = -1;
+	for (int i = 0; i < ArrayCount(sgResolutions); ++i) {
+		if (sgResolutions[0].X == width && sgResolutions[0].Y == height) {
+			selectedResolution = i;
+			break;
+		}
+	}
+	
 	if (gbMaxPlayers == 1) {
 		gmenu_set_items(sgSingleMenu, gamemenu_update_single);
 	} else {
@@ -266,10 +291,8 @@ void gamemenu_options(BOOL bActivate)
 {
 	gamemenu_get_music();
 	gamemenu_get_sound();
-	//gamemenu_jogging();
 	gamemenu_get_gamma();
 	gamemenu_get_speed();
-	//gamemenu_get_color_cycling();
 	gmenu_set_items(sgOptionsMenu, NULL);
 }
 
@@ -388,6 +411,33 @@ void gamemenu_speed(BOOL bActivate)
 
 	SRegSaveValue("devilutionx", "game speed", 0, ticks_per_sec);
 	tick_delay = 1000 / ticks_per_sec;
+}
+
+void gamemenu_fullscreen(BOOL bActivate)
+{
+	if (bActivate) {
+		fullscreen = !fullscreen;
+		SRegSaveValue("devilutionx", "fullscreen", 0, fullscreen);
+		dx_reinit();
+	}
+}
+
+void gamemenu_resolution(BOOL bActivate)
+{
+	if (bActivate) {
+		selectedResolution++;
+		if (selectedResolution >= ArrayCount(sgResolutions)) {
+			selectedResolution = 0;
+		}
+
+		int width = sgResolutions[selectedResolution].X;
+		int height = sgResolutions[selectedResolution].Y;
+		
+		SRegSaveValue("devilutionx", "width", 0, width);
+		SRegSaveValue("devilutionx", "height", 0, height);
+
+		RescaleWindowSize(width, height);
+	}
 }
 
 void gamemenu_color_cycling(BOOL bActivate)

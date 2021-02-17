@@ -937,7 +937,7 @@ void recv_plrinfo(int pnum, TCmdPlrInfoHdr *p, BOOL recv)
 	SyncInitPlr(pnum);
 
 	if (plr[pnum].plrlevel == currlevel) {
-		if (plr[pnum]._pHitPoints >> 6 > 0) {
+		if (plr[pnum]._pHitPoints >> HPMANASHIFT > 0) {
 			StartStand(pnum, 0);
 		} else {
 			plr[pnum]._pgfxnum = 0;

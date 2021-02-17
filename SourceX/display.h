@@ -40,6 +40,8 @@ void ScaleOutputRect(SDL_Rect *rect);
 // If the output requires software scaling, replaces the given surface with a scaled one.
 void ScaleSurfaceToOutput(SDL_Surface **surface);
 
+extern void RescaleWindowSize(int width, int height);
+
 // Convert from output coordinates to logical (resolution-independent) coordinates.
 template <
     typename T,

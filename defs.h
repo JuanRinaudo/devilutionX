@@ -4,12 +4,33 @@
  * Global definitions and Macros.
  */
 
+#define PI32 3.14159265359f
+
+#define MIN(a, b) (a) > (b) ? (b) : (a)
+#define MAX(a, b) (a) < (b) ? (b) : (a)
+#define ABS(a) ((a) > 0 ? (a) : -(a))
+#define MOD(a, m) ((a) % (m)) >= 0 ? ((a) % (m)) : (((a) % (m)) + (m))
+#define SQUARE(x) ((x) * (x))
+
+#define Kilobytes(Value) ((Value)*1024LL)
+#define Megabytes(Value) (Kilobytes(Value)*1024LL)
+#define Gigabytes(Value) (Megabytes(Value)*1024LL)
+#define Terabytes(Value) (Gigabytes(Value)*1024LL)
+
+#define KEY_UP 0
+#define KEY_RELEASED 1
+#define KEY_PRESSED 2
+#define KEY_DOWN 3
+
+#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+
 #define DMAXX					40
 #define DMAXY					40
 
 #define LIGHTSIZE				6912 // 27 * 256
 #define NO_LIGHT				-1
 
+#define GMENU_RESOLUTION		0x10000000
 #define GMENU_SLIDER			0x40000000
 #define GMENU_ENABLED			0x80000000
 
@@ -24,6 +45,8 @@
 #define SPELLBIT(s) ((__int64)1 << (s - 1))
 
 #define MAX_CHUNKS				(MAX_LVLS + 5)
+
+#define HPMANASHIFT				6
 
 // #define MAX_PATH				260
 #define MAX_SEND_STR_LEN		80
@@ -50,12 +73,13 @@
 #define MAXVISION				32
 #define MDMAXX					40
 #define MDMAXY					40
-#define MAXCHARLEVEL			51
+#define MAXCHARLEVEL			101
 #define ITEMTYPES				43
 
 // number of inventory grid cells
-#define NUM_INV_GRID_ELEM		40
+#define NUM_INV_GRID_ELEM		50
 #define INV_SLOT_SIZE_PX		28
+#define INV_SLOT_DISTANCE		INV_SLOT_SIZE_PX + 1
 
 // Item indestructible durability
 #define DUR_INDESTRUCTIBLE		255
@@ -73,7 +97,7 @@
 #define STORE_LINES				104
 
 // from diablo 2 beta
-#define MAXEXP					2000000000
+#define MAXEXP					ExpLvlsTbl[MAXCHARLEVEL - 1]
 #define MAXRESIST				75
 
 #define GOLD_SMALL_LIMIT		1000
@@ -138,7 +162,7 @@
 #define BUFFER_WIDTH	(BORDER_LEFT + SCREEN_WIDTH + BORDER_RIGHT)
 #define BUFFER_HEIGHT	(BORDER_TOP + SCREEN_HEIGHT + BORDER_BOTTOM)
 
-#define UI_OFFSET_Y		((SCREEN_HEIGHT - 480) / 2)
+#define UI_OFFSET_Y		((SCREEN_HEIGHT - 600) / 2)
 
 #define TILE_WIDTH		64
 #define TILE_HEIGHT		32

@@ -9,6 +9,7 @@ DEVILUTION_BEGIN_NAMESPACE
 
 BOOL invflag;
 BYTE *pInvCels;
+BYTE *pBigInvCels;
 BOOL drawsbarflag;
 int sgdwLastTime; // check name
 
@@ -18,98 +19,47 @@ int sgdwLastTime; // check name
  *                          00 01
  *                          02 03   06
  *              07 08       19 20       13 14
- *              09 10       21 22       15 16
- *              11 12       23 24       17 18
- *                 04                   05
+ *              09 10  75   21 22   76  15 16
+ *              11 12  04   23 24   05  17 18
+ *                                    
  *              25 26 27 28 29 30 31 32 33 34
  *              35 36 37 38 39 40 41 42 43 44
  *              45 46 47 48 49 50 51 52 53 54
  *              55 56 57 58 59 60 61 62 63 64
- * 65 66 67 68 69 70 71 72
+ *				65 66 67 68 69 70 71 72 73 74
+ * 77 78 79 80 81 82 83 84
  * @see graphics/inv/inventory.png
  */
-const InvXY InvRect[] = {
-	// clang-format off
-	//  X,   Y
-	{ 132,  31 }, // helmet
-	{ 160,  31 }, // helmet
-	{ 132,  59 }, // helmet
-	{ 160,  59 }, // helmet
-	{  45, 205 }, // left ring
-	{ 247, 205 }, // right ring
-	{ 204,  59 }, // amulet
-	{  17, 104 }, // left hand
-	{  46, 104 }, // left hand
-	{  17, 132 }, // left hand
-	{  46, 132 }, // left hand
-	{  17, 160 }, // left hand
-	{  46, 160 }, // left hand
-	{ 247, 104 }, // right hand
-	{ 276, 104 }, // right hand
-	{ 247, 132 }, // right hand
-	{ 276, 132 }, // right hand
-	{ 247, 160 }, // right hand
-	{ 276, 160 }, // right hand
-	{ 132, 104 }, // chest
-	{ 160, 104 }, // chest
-	{ 132, 132 }, // chest
-	{ 160, 132 }, // chest
-	{ 132, 160 }, // chest
-	{ 160, 160 }, // chest
-	{  17, 250 }, // inv row 1
-	{  46, 250 }, // inv row 1
-	{  75, 250 }, // inv row 1
-	{ 104, 250 }, // inv row 1
-	{ 133, 250 }, // inv row 1
-	{ 162, 250 }, // inv row 1
-	{ 191, 250 }, // inv row 1
-	{ 220, 250 }, // inv row 1
-	{ 249, 250 }, // inv row 1
-	{ 278, 250 }, // inv row 1
-	{  17, 279 }, // inv row 2
-	{  46, 279 }, // inv row 2
-	{  75, 279 }, // inv row 2
-	{ 104, 279 }, // inv row 2
-	{ 133, 279 }, // inv row 2
-	{ 162, 279 }, // inv row 2
-	{ 191, 279 }, // inv row 2
-	{ 220, 279 }, // inv row 2
-	{ 249, 279 }, // inv row 2
-	{ 278, 279 }, // inv row 2
-	{  17, 308 }, // inv row 3
-	{  46, 308 }, // inv row 3
-	{  75, 308 }, // inv row 3
-	{ 104, 308 }, // inv row 3
-	{ 133, 308 }, // inv row 3
-	{ 162, 308 }, // inv row 3
-	{ 191, 308 }, // inv row 3
-	{ 220, 308 }, // inv row 3
-	{ 249, 308 }, // inv row 3
-	{ 278, 308 }, // inv row 3
-	{  17, 337 }, // inv row 4
-	{  46, 337 }, // inv row 4
-	{  75, 337 }, // inv row 4
-	{ 104, 337 }, // inv row 4
-	{ 133, 337 }, // inv row 4
-	{ 162, 337 }, // inv row 4
-	{ 191, 337 }, // inv row 4
-	{ 220, 337 }, // inv row 4
-	{ 249, 337 }, // inv row 4
-	{ 278, 337 }, // inv row 4
-	{ 205,  33 }, // belt
-	{ 234,  33 }, // belt
-	{ 263,  33 }, // belt
-	{ 292,  33 }, // belt
-	{ 321,  33 }, // belt
-	{ 350,  33 }, // belt
-	{ 379,  33 }, // belt
-	{ 408,  33 }  // belt
-	// clang-format on
+Vec2 InvRect[NUM_XY_SLOTS];
+
+Vec2 InvLocSizes[NUM_INVLOC] = {
+	{ 2, 2 },
+	{ 1, 1 },
+	{ 1, 1 },
+	{ 1, 1 },
+	{ 2, 3 },
+	{ 2, 3 },
+	{ 2, 3 },
+	{ 1, 1 },
+	{ 1, 1 },
 };
 
 /* data */
 /** Specifies the starting inventory slots for placement of 2x2 items. */
 int AP2x2Tbl[10] = { 8, 28, 6, 26, 4, 24, 2, 22, 0, 20 };
+
+static void ConfigInventoryPositions(int index, int x, int y, int width, int height)
+{
+	int startX = x;
+	for (int i = 0; i < height; ++i) {
+		for (int j = 0; j < width; ++j) {
+			InvRect[index + i * width + j] = { x, y };
+			x += INV_SLOT_DISTANCE;
+		}
+		x = startX;
+		y += INV_SLOT_DISTANCE;
+	}
+}
 
 void FreeInvGFX()
 {
@@ -118,23 +68,20 @@ void FreeInvGFX()
 
 void InitInv()
 {
-	if (plr[myplr]._pClass == PC_WARRIOR) {
-		pInvCels = LoadFileInMem("Data\\Inv\\Inv.CEL", NULL);
-	} else if (plr[myplr]._pClass == PC_ROGUE) {
-		pInvCels = LoadFileInMem("Data\\Inv\\Inv_rog.CEL", NULL);
-	} else if (plr[myplr]._pClass == PC_SORCERER) {
-		pInvCels = LoadFileInMem("Data\\Inv\\Inv_Sor.CEL", NULL);
-	} else if (plr[myplr]._pClass == PC_MONK) {
-		if (gbIsSpawn)
-			pInvCels = LoadFileInMem("Data\\Inv\\Inv_Sor.CEL", NULL);
-		else
-			pInvCels = LoadFileInMem("Data\\Inv\\Inv.CEL", NULL);
-	} else if (plr[myplr]._pClass == PC_BARD) {
-		pInvCels = LoadFileInMem("Data\\Inv\\Inv_rog.CEL", NULL);
-	} else if (plr[myplr]._pClass == PC_BARBARIAN) {
-		pInvCels = LoadFileInMem("Data\\Inv\\Inv.CEL", NULL);
-	}
+	pBigInvCels = LoadFileInMem("Data\\Inv\\bigInv.CEL", NULL);
 
+	ConfigInventoryPositions(SLOTXY_HEAD_FIRST			, 132,  31, InvLocSizes[INVLOC_HEAD].X, InvLocSizes[INVLOC_HEAD].Y); // Helmet
+	ConfigInventoryPositions(SLOTXY_RING_LEFT			,  90, 160, InvLocSizes[INVLOC_RING_LEFT].X, InvLocSizes[INVLOC_RING_LEFT].Y); // Left ring
+	ConfigInventoryPositions(SLOTXY_RING_RIGHT			, 206, 160, InvLocSizes[INVLOC_RING_RIGHT].X, InvLocSizes[INVLOC_RING_RIGHT].Y); // Right ring
+	ConfigInventoryPositions(SLOTXY_RING_LEFT_2			,  90, 126, InvLocSizes[INVLOC_RING_LEFT_2].X, InvLocSizes[INVLOC_RING_LEFT_2].Y); // Left ring 2
+	ConfigInventoryPositions(SLOTXY_RING_RIGHT_2		, 206, 126, InvLocSizes[INVLOC_RING_RIGHT_2].X, InvLocSizes[INVLOC_RING_RIGHT_2].Y); // Right ring 2
+	ConfigInventoryPositions(SLOTXY_AMULET				, 204,  59, InvLocSizes[INVLOC_AMULET].X, InvLocSizes[INVLOC_AMULET].Y); // Amulet
+	ConfigInventoryPositions(SLOTXY_HAND_LEFT_FIRST		,  17, 104, InvLocSizes[INVLOC_HAND_LEFT].X, InvLocSizes[INVLOC_HAND_LEFT].Y); // Left hand
+	ConfigInventoryPositions(SLOTXY_HAND_RIGHT_FIRST	, 247, 104, InvLocSizes[INVLOC_HAND_RIGHT].X, InvLocSizes[INVLOC_HAND_RIGHT].Y); // Right hand
+	ConfigInventoryPositions(SLOTXY_CHEST_FIRST			, 132, 104, InvLocSizes[INVLOC_CHEST].X, InvLocSizes[INVLOC_CHEST].Y); // Chest
+	ConfigInventoryPositions(SLOTXY_INV_FIRST			,  17, 221,  10,   5); // Inventory
+	ConfigInventoryPositions(SLOTXY_BELT_FIRST			, 205,  33,   8,   1); // Belt
+	
 	invflag = FALSE;
 	drawsbarflag = FALSE;
 }
@@ -164,297 +111,92 @@ void InvDrawSlotBack(int X, int Y, int W, int H)
 	}
 }
 
-/**
- * @brief Render the inventory panel to the back buffer
- */
-void DrawInv()
+static void DrawInventorySlot(int itemX, int itemY, dvl::inv_body_loc location)
 {
-	BOOL invtest[NUM_INV_GRID_ELEM];
-	int frame, frame_width, color, screen_x, screen_y, i, j, ii;
+	int screen_x, screen_y;
 	BYTE *pBuff;
 
-	CelDraw(RIGHT_PANEL_X, 351 + SCREEN_Y, pInvCels, 1, SPANEL_WIDTH);
+	if (plr[myplr].InvBody[location]._itype != ITYPE_NONE) {
+		int slotX = RIGHT_PANEL_X + itemX;
+		int slotY = itemY + SCREEN_Y;
 
-	if (plr[myplr].InvBody[INVLOC_HEAD]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 133, 59 + SCREEN_Y, 2 * INV_SLOT_SIZE_PX, 2 * INV_SLOT_SIZE_PX);
+		int frame = plr[myplr].InvBody[location]._iCurs + CURSOR_FIRSTITEM;
+		int frameWidth = InvItemWidth[frame];
+		int frameHeight = InvItemHeight[frame];
 
-		frame = plr[myplr].InvBody[INVLOC_HEAD]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
+		int slotSizeX = InvLocSizes[location].X;
+		int slotSizeY = InvLocSizes[location].Y;
 
-		if (pcursinvitem == INVITEM_HEAD) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_HEAD]._iMagical != ITEM_QUALITY_NORMAL) {
+		int slotWidth = slotSizeX * INV_SLOT_SIZE_PX;
+		int slotHeight = slotSizeY * INV_SLOT_SIZE_PX;
+
+		if (slotSizeY > 1) {
+			slotY += (slotSizeY - 1) * INV_SLOT_SIZE_PX;
+		}
+
+		InvDrawSlotBack(slotX, slotY, slotWidth, slotHeight);
+
+		if (slotWidth > frameWidth) {
+			slotX += (slotWidth - frameWidth) / 2;
+		}
+		if (slotHeight > frameHeight) {
+			slotY -= (slotHeight - frameHeight) / 2;
+		}
+
+		if (pcursinvitem == location) {
+			int color = ICOL_WHITE;
+			if (plr[myplr].InvBody[location]._iMagical != ITEM_QUALITY_NORMAL) {
 				color = ICOL_BLUE;
 			}
-			if (!plr[myplr].InvBody[INVLOC_HEAD]._iStatFlag) {
+			if (!plr[myplr].InvBody[location]._iStatFlag) {
 				color = ICOL_RED;
 			}
-			if (frame <= 179) {
-				CelBlitOutline(color, RIGHT_PANEL_X + 133, 59 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, RIGHT_PANEL_X + 133, 59 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
+			CelBlitOutline(color, slotX, slotY, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 		}
 
-		if (plr[myplr].InvBody[INVLOC_HEAD]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(RIGHT_PANEL_X + 133, 59 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(RIGHT_PANEL_X + 133, 59 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
+		if (plr[myplr].InvBody[location]._iStatFlag) {
+			CelClippedDraw(slotX, slotY, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(RIGHT_PANEL_X + 133, 59 + SCREEN_Y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(RIGHT_PANEL_X + 133, 59 + SCREEN_Y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-	}
-
-	if (plr[myplr].InvBody[INVLOC_RING_LEFT]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 48, 205 + SCREEN_Y, INV_SLOT_SIZE_PX, INV_SLOT_SIZE_PX);
-
-		frame = plr[myplr].InvBody[INVLOC_RING_LEFT]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
-
-		if (pcursinvitem == INVITEM_RING_LEFT) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_RING_LEFT]._iMagical != ITEM_QUALITY_NORMAL) {
-				color = ICOL_BLUE;
-			}
-			if (!plr[myplr].InvBody[INVLOC_RING_LEFT]._iStatFlag) {
-				color = ICOL_RED;
-			}
-			if (frame <= 179) {
-				CelBlitOutline(color, RIGHT_PANEL_X + 48, 205 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, RIGHT_PANEL_X + 48, 205 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
+			CelDrawLightRed(slotX, slotY, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth, 1);
 		}
 
-		if (plr[myplr].InvBody[INVLOC_RING_LEFT]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(RIGHT_PANEL_X + 48, 205 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(RIGHT_PANEL_X + 48, 205 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(RIGHT_PANEL_X + 48, 205 + SCREEN_Y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(RIGHT_PANEL_X + 48, 205 + SCREEN_Y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-	}
-
-	if (plr[myplr].InvBody[INVLOC_RING_RIGHT]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 249, 205 + SCREEN_Y, INV_SLOT_SIZE_PX, INV_SLOT_SIZE_PX);
-
-		frame = plr[myplr].InvBody[INVLOC_RING_RIGHT]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
-
-		if (pcursinvitem == INVITEM_RING_RIGHT) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_RING_RIGHT]._iMagical != ITEM_QUALITY_NORMAL) {
-				color = ICOL_BLUE;
-			}
-			if (!plr[myplr].InvBody[INVLOC_RING_RIGHT]._iStatFlag) {
-				color = ICOL_RED;
-			}
-			if (frame <= 179) {
-				CelBlitOutline(color, RIGHT_PANEL_X + 249, 205 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, RIGHT_PANEL_X + 249, 205 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		}
-
-		if (plr[myplr].InvBody[INVLOC_RING_RIGHT]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(RIGHT_PANEL_X + 249, 205 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(RIGHT_PANEL_X + 249, 205 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(RIGHT_PANEL_X + 249, 205 + SCREEN_Y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(RIGHT_PANEL_X + 249, 205 + SCREEN_Y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-	}
-
-	if (plr[myplr].InvBody[INVLOC_AMULET]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 205, 60 + SCREEN_Y, INV_SLOT_SIZE_PX, INV_SLOT_SIZE_PX);
-
-		frame = plr[myplr].InvBody[INVLOC_AMULET]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
-
-		if (pcursinvitem == INVITEM_AMULET) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_AMULET]._iMagical != ITEM_QUALITY_NORMAL) {
-				color = ICOL_BLUE;
-			}
-			if (!plr[myplr].InvBody[INVLOC_AMULET]._iStatFlag) {
-				color = ICOL_RED;
-			}
-			if (frame <= 179) {
-				CelBlitOutline(color, RIGHT_PANEL_X + 205, 60 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, RIGHT_PANEL_X + 205, 60 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		}
-
-		if (plr[myplr].InvBody[INVLOC_AMULET]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(RIGHT_PANEL_X + 205, 60 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(RIGHT_PANEL_X + 205, 60 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(RIGHT_PANEL_X + 205, 60 + SCREEN_Y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(RIGHT_PANEL_X + 205, 60 + SCREEN_Y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-	}
-
-	if (plr[myplr].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 17, 160 + SCREEN_Y, 2 * INV_SLOT_SIZE_PX, 3 * INV_SLOT_SIZE_PX);
-
-		frame = plr[myplr].InvBody[INVLOC_HAND_LEFT]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
-		// calc item offsets for weapons smaller than 2x3 slots
-		screen_x = frame_width == INV_SLOT_SIZE_PX ? (RIGHT_PANEL_X + 31) : (RIGHT_PANEL_X + 17);
-		screen_y = InvItemHeight[frame] == (3 * INV_SLOT_SIZE_PX) ? (160 + SCREEN_Y) : (146 + SCREEN_Y);
-
-		if (pcursinvitem == INVITEM_HAND_LEFT) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_HAND_LEFT]._iMagical != ITEM_QUALITY_NORMAL) {
-				color = ICOL_BLUE;
-			}
-			if (!plr[myplr].InvBody[INVLOC_HAND_LEFT]._iStatFlag) {
-				color = ICOL_RED;
-			}
-			if (frame <= 179) {
-				CelBlitOutline(color, screen_x, screen_y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, screen_x, screen_y, pCursCels2, frame - 179, frame_width);
-			}
-		}
-
-		if (plr[myplr].InvBody[INVLOC_HAND_LEFT]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(screen_x, screen_y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(screen_x, screen_y, pCursCels2, frame - 179, frame_width);
-			}
-		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(screen_x, screen_y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(screen_x, screen_y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-
-		if (plr[myplr].InvBody[INVLOC_HAND_LEFT]._iLoc == ILOC_TWOHAND) {
-			if (plr[myplr]._pClass != PC_BARBARIAN
-			    || plr[myplr].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_SWORD
-			        && plr[myplr].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_MACE) {
+		if (location == INVLOC_HAND_LEFT && plr[myplr].InvBody[INVLOC_HAND_LEFT]._iLoc == ILOC_TWOHAND) {
+			if (plr[myplr]._pClass != PC_BARBARIAN || plr[myplr].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_SWORD && plr[myplr].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_MACE) {
 				InvDrawSlotBack(RIGHT_PANEL_X + 248, 160 + SCREEN_Y, 2 * INV_SLOT_SIZE_PX, 3 * INV_SLOT_SIZE_PX);
 				light_table_index = 0;
 				cel_transparency_active = TRUE;
 
-				pBuff = frame_width == INV_SLOT_SIZE_PX
-				    ? &gpBuffer[SCREENXY(RIGHT_PANEL_X + 197, SCREEN_Y)]
-				    : &gpBuffer[SCREENXY(RIGHT_PANEL_X + 183, SCREEN_Y)];
-				if (frame <= 179) {
-					CelClippedBlitLightTrans(pBuff, pCursCels, frame, frame_width);
-				} else {
-					CelClippedBlitLightTrans(pBuff, pCursCels2, frame - 179, frame_width);
-				}
+				pBuff = frameWidth == INV_SLOT_SIZE_PX ?
+					&gpBuffer[SCREENXY(RIGHT_PANEL_X + 197, SCREEN_Y)] :
+					&gpBuffer[SCREENXY(RIGHT_PANEL_X + 183, SCREEN_Y)];
+				CelClippedBlitLightTrans(pBuff, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 
 				cel_transparency_active = FALSE;
 			}
 		}
 	}
-	if (plr[myplr].InvBody[INVLOC_HAND_RIGHT]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 248, 160 + SCREEN_Y, 2 * INV_SLOT_SIZE_PX, 3 * INV_SLOT_SIZE_PX);
+}
 
-		frame = plr[myplr].InvBody[INVLOC_HAND_RIGHT]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
-		// calc item offsets for weapons smaller than 2x3 slots
-		screen_x = frame_width == INV_SLOT_SIZE_PX ? (RIGHT_PANEL_X + 261) : (RIGHT_PANEL_X + 249);
-		screen_y = InvItemHeight[frame] == 3 * INV_SLOT_SIZE_PX ? (160 + SCREEN_Y) : (146 + SCREEN_Y);
+void DrawInv()
+{
+	CelDraw(RIGHT_PANEL_X, 351 + SCREEN_Y, pBigInvCels, 1, SPANEL_WIDTH);
 
-		if (pcursinvitem == INVITEM_HAND_RIGHT) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_HAND_RIGHT]._iMagical != ITEM_QUALITY_NORMAL) {
-				color = ICOL_BLUE;
-			}
-			if (!plr[myplr].InvBody[INVLOC_HAND_RIGHT]._iStatFlag) {
-				color = ICOL_RED;
-			}
-			if (frame <= 179) {
-				CelBlitOutline(color, screen_x, screen_y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, screen_x, screen_y, pCursCels2, frame - 179, frame_width);
-			}
-		}
+	DrawInventorySlot(InvRect[SLOTXY_HEAD_FIRST].X, InvRect[SLOTXY_HEAD_FIRST].Y, INVLOC_HEAD);
 
-		if (plr[myplr].InvBody[INVLOC_HAND_RIGHT]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(screen_x, screen_y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(screen_x, screen_y, pCursCels2, frame - 179, frame_width);
-			}
-		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(screen_x, screen_y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(screen_x, screen_y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-	}
-
-	if (plr[myplr].InvBody[INVLOC_CHEST]._itype != ITYPE_NONE) {
-		InvDrawSlotBack(RIGHT_PANEL_X + 133, 160 + SCREEN_Y, 2 * INV_SLOT_SIZE_PX, 3 * INV_SLOT_SIZE_PX);
-
-		frame = plr[myplr].InvBody[INVLOC_CHEST]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
-
-		if (pcursinvitem == INVITEM_CHEST) {
-			color = ICOL_WHITE;
-			if (plr[myplr].InvBody[INVLOC_CHEST]._iMagical != ITEM_QUALITY_NORMAL) {
-				color = ICOL_BLUE;
-			}
-			if (!plr[myplr].InvBody[INVLOC_CHEST]._iStatFlag) {
-				color = ICOL_RED;
-			}
-			if (frame <= 179) {
-				CelBlitOutline(color, RIGHT_PANEL_X + 133, 160 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelBlitOutline(color, RIGHT_PANEL_X + 133, 160 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		}
-
-		if (plr[myplr].InvBody[INVLOC_CHEST]._iStatFlag) {
-			if (frame <= 179) {
-				CelClippedDraw(RIGHT_PANEL_X + 133, 160 + SCREEN_Y, pCursCels, frame, frame_width);
-			} else {
-				CelClippedDraw(RIGHT_PANEL_X + 133, 160 + SCREEN_Y, pCursCels2, frame - 179, frame_width);
-			}
-		} else {
-			if (frame <= 179) {
-				CelDrawLightRed(RIGHT_PANEL_X + 133, 160 + SCREEN_Y, pCursCels, frame, frame_width, 1);
-			} else {
-				CelDrawLightRed(RIGHT_PANEL_X + 133, 160 + SCREEN_Y, pCursCels2, frame - 179, frame_width, 1);
-			}
-		}
-	}
-
+	DrawInventorySlot(InvRect[SLOTXY_RING_LEFT].X, InvRect[SLOTXY_RING_LEFT].Y, INVLOC_RING_LEFT);
+	DrawInventorySlot(InvRect[SLOTXY_RING_RIGHT].X, InvRect[SLOTXY_RING_RIGHT].Y, INVLOC_RING_RIGHT);
+	DrawInventorySlot(InvRect[SLOTXY_RING_LEFT_2].X, InvRect[SLOTXY_RING_LEFT_2].Y, INVLOC_RING_LEFT_2);
+	DrawInventorySlot(InvRect[SLOTXY_RING_RIGHT_2].X, InvRect[SLOTXY_RING_RIGHT_2].Y, INVLOC_RING_RIGHT_2);
+	DrawInventorySlot(InvRect[SLOTXY_AMULET].X, InvRect[SLOTXY_AMULET].Y, INVLOC_AMULET);
+	
+	DrawInventorySlot(InvRect[SLOTXY_HAND_LEFT_FIRST].X, InvRect[SLOTXY_HAND_LEFT_FIRST].Y, INVLOC_HAND_LEFT);
+	DrawInventorySlot(InvRect[SLOTXY_HAND_RIGHT_FIRST].X, InvRect[SLOTXY_HAND_RIGHT_FIRST].Y, INVLOC_HAND_RIGHT);
+	DrawInventorySlot(InvRect[SLOTXY_CHEST_FIRST].X, InvRect[SLOTXY_CHEST_FIRST].Y, INVLOC_CHEST);
+	
+	BOOL invtest[NUM_INV_GRID_ELEM];
+	int frame, frameWidth, color, i, j, ii;
 	for (i = 0; i < NUM_INV_GRID_ELEM; i++) {
-		invtest[i] = FALSE;
+		invtest[i] = FALSE; 
 		if (plr[myplr].InvGrid[i] != 0) {
 			InvDrawSlotBack(
 			    InvRect[i + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
@@ -472,7 +214,7 @@ void DrawInv()
 			invtest[j] = TRUE;
 
 			frame = plr[myplr].InvList[ii]._iCurs + CURSOR_FIRSTITEM;
-			frame_width = InvItemWidth[frame];
+			frameWidth = InvItemWidth[frame];
 			if (pcursinvitem == ii + INVITEM_INV_FIRST) {
 				color = ICOL_WHITE;
 				if (plr[myplr].InvList[ii]._iMagical != ITEM_QUALITY_NORMAL) {
@@ -481,45 +223,24 @@ void DrawInv()
 				if (!plr[myplr].InvList[ii]._iStatFlag) {
 					color = ICOL_RED;
 				}
-				if (frame <= 179) {
-					CelBlitOutline(
-					    color,
-					    InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
-					    InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
-					    pCursCels, frame, frame_width);
-				} else {
-					CelBlitOutline(
-					    color,
-					    InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
-					    InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
-					    pCursCels2, frame - 179, frame_width);
-				}
+
+				CelBlitOutline(
+					color,
+					InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
+					InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
+					pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 			}
 
 			if (plr[myplr].InvList[ii]._iStatFlag) {
-				if (frame <= 179) {
-					CelClippedDraw(
-					    InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
-					    InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
-					    pCursCels, frame, frame_width);
-				} else {
-					CelClippedDraw(
-					    InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
-					    InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
-					    pCursCels2, frame - 179, frame_width);
-				}
+				CelClippedDraw(
+					InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
+					InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
+					pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 			} else {
-				if (frame <= 179) {
-					CelDrawLightRed(
-					    InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
-					    InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
-					    pCursCels, frame, frame_width, 1);
-				} else {
-					CelDrawLightRed(
-					    InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
-					    InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
-					    pCursCels2, frame - 179, frame_width, 1);
-				}
+				CelDrawLightRed(
+					InvRect[j + SLOTXY_INV_FIRST].X + RIGHT_PANEL_X,
+					InvRect[j + SLOTXY_INV_FIRST].Y + SCREEN_Y - 1,
+					pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth, 1);
 			}
 		}
 	}
@@ -527,7 +248,7 @@ void DrawInv()
 
 void DrawInvBelt()
 {
-	int i, frame, frame_width, color;
+	int i, frame, frameWidth, color;
 	BYTE fi, ff;
 
 	if (talkflag) {
@@ -543,7 +264,7 @@ void DrawInvBelt()
 
 		InvDrawSlotBack(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, INV_SLOT_SIZE_PX, INV_SLOT_SIZE_PX);
 		frame = plr[myplr].SpdList[i]._iCurs + CURSOR_FIRSTITEM;
-		frame_width = InvItemWidth[frame];
+		frameWidth = InvItemWidth[frame];
 
 		if (pcursinvitem == i + INVITEM_BELT_FIRST) {
 			color = ICOL_WHITE;
@@ -552,23 +273,14 @@ void DrawInvBelt()
 			if (!plr[myplr].SpdList[i]._iStatFlag)
 				color = ICOL_RED;
 			if (!sgbControllerActive || invflag) {
-				if (frame <= 179)
-					CelBlitOutline(color, InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels, frame, frame_width);
-				else
-					CelBlitOutline(color, InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels2, frame - 179, frame_width);
+				CelBlitOutline(color, InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 			}
 		}
 
 		if (plr[myplr].SpdList[i]._iStatFlag) {
-			if (frame <= 179)
-				CelClippedDraw(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels, frame, frame_width);
-			else
-				CelClippedDraw(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels2, frame - 179, frame_width);
+			CelClippedDraw(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth);
 		} else {
-			if (frame <= 179)
-				CelDrawLightRed(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels, frame, frame_width, 1);
-			else
-				CelDrawLightRed(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels2, frame - 179, frame_width, 1);
+			CelDrawLightRed(InvRect[i + SLOTXY_BELT_FIRST].X + PANEL_X, InvRect[i + SLOTXY_BELT_FIRST].Y + PANEL_Y - 1, pCursCels, frame + (frame > 179 ? - 179 : 0), frameWidth, 1);
 		}
 
 		if (AllItemsList[plr[myplr].SpdList[i].IDidx].iUsable
@@ -845,6 +557,16 @@ int SwapItem(ItemStruct *a, ItemStruct *b)
 	return h._iCurs + CURSOR_FIRSTITEM;
 }
 
+static int SimpleItemEquip(int pnum, int cn, dvl::inv_body_loc location)
+{
+	NetSendCmdChItem(FALSE, location);
+	if (plr[pnum].InvBody[location]._itype == ITYPE_NONE)
+		plr[pnum].InvBody[location] = plr[pnum].HoldItem;
+	else
+		cn = SwapItem(&plr[pnum].InvBody[location], &plr[pnum].HoldItem);
+	return cn;
+}
+
 void CheckInvPaste(int pnum, int mx, int my)
 {
 	int r, sx, sy;
@@ -887,7 +609,7 @@ void CheckInvPaste(int pnum, int mx, int my)
 	il = ILOC_UNEQUIPABLE;
 	if (r >= SLOTXY_HEAD_FIRST && r <= SLOTXY_HEAD_LAST)
 		il = ILOC_HELM;
-	if (r >= SLOTXY_RING_LEFT && r <= SLOTXY_RING_RIGHT)
+	if (r == SLOTXY_RING_LEFT || r == SLOTXY_RING_RIGHT || r == SLOTXY_RING_LEFT_2 || r == SLOTXY_RING_RIGHT_2)
 		il = ILOC_RING;
 	if (r == SLOTXY_AMULET)
 		il = ILOC_AMULET;
@@ -997,33 +719,21 @@ void CheckInvPaste(int pnum, int mx, int my)
 	cn = CURSOR_HAND;
 	switch (il) {
 	case ILOC_HELM:
-		NetSendCmdChItem(FALSE, INVLOC_HEAD);
-		if (plr[pnum].InvBody[INVLOC_HEAD]._itype == ITYPE_NONE)
-			plr[pnum].InvBody[INVLOC_HEAD] = plr[pnum].HoldItem;
-		else
-			cn = SwapItem(&plr[pnum].InvBody[INVLOC_HEAD], &plr[pnum].HoldItem);
+		cn = SimpleItemEquip(pnum, cn, INVLOC_HEAD);
 		break;
 	case ILOC_RING:
 		if (r == SLOTXY_RING_LEFT) {
-			NetSendCmdChItem(FALSE, INVLOC_RING_LEFT);
-			if (plr[pnum].InvBody[INVLOC_RING_LEFT]._itype == ITYPE_NONE)
-				plr[pnum].InvBody[INVLOC_RING_LEFT] = plr[pnum].HoldItem;
-			else
-				cn = SwapItem(&plr[pnum].InvBody[INVLOC_RING_LEFT], &plr[pnum].HoldItem);
+			cn = SimpleItemEquip(pnum, cn, INVLOC_RING_LEFT);
+		} else if (r == SLOTXY_RING_RIGHT) {
+			cn = SimpleItemEquip(pnum, cn, INVLOC_RING_RIGHT);
+		} else if (r == SLOTXY_RING_LEFT_2) {
+			cn = SimpleItemEquip(pnum, cn, INVLOC_RING_LEFT_2);
 		} else {
-			NetSendCmdChItem(FALSE, INVLOC_RING_RIGHT);
-			if (plr[pnum].InvBody[INVLOC_RING_RIGHT]._itype == ITYPE_NONE)
-				plr[pnum].InvBody[INVLOC_RING_RIGHT] = plr[pnum].HoldItem;
-			else
-				cn = SwapItem(&plr[pnum].InvBody[INVLOC_RING_RIGHT], &plr[pnum].HoldItem);
+			cn = SimpleItemEquip(pnum, cn, INVLOC_RING_RIGHT_2);
 		}
 		break;
 	case ILOC_AMULET:
-		NetSendCmdChItem(FALSE, INVLOC_AMULET);
-		if (plr[pnum].InvBody[INVLOC_AMULET]._itype == ITYPE_NONE)
-			plr[pnum].InvBody[INVLOC_AMULET] = plr[pnum].HoldItem;
-		else
-			cn = SwapItem(&plr[pnum].InvBody[INVLOC_AMULET], &plr[pnum].HoldItem);
+		cn = SimpleItemEquip(pnum, cn, INVLOC_AMULET);
 		break;
 	case ILOC_ONEHAND:
 		if (r <= SLOTXY_HAND_LEFT_LAST) {
@@ -1299,6 +1009,18 @@ void CheckInvSwap(int pnum, BYTE bLoc, int idx, WORD wCI, int seed, BOOL bId)
 	CalcPlrInv(pnum, TRUE);
 }
 
+void EquipmentCut(int pnum, int r, int slotFirst, int slotEnd, dvl::inv_body_loc location)
+{
+	if (
+	    r >= slotFirst
+	    && r <= slotEnd
+	    && plr[pnum].InvBody[location]._itype != ITYPE_NONE) {
+		NetSendCmdDelItem(FALSE, location);
+		plr[pnum].HoldItem = plr[pnum].InvBody[location];
+		plr[pnum].InvBody[location]._itype = ITYPE_NONE;
+	}
+}
+
 void CheckInvCut(int pnum, int mx, int my)
 {
 	int r;
@@ -1342,65 +1064,15 @@ void CheckInvCut(int pnum, int mx, int my)
 
 	plr[pnum].HoldItem._itype = ITYPE_NONE;
 
-	if (
-	    r >= SLOTXY_HEAD_FIRST
-	    && r <= SLOTXY_HEAD_LAST
-	    && plr[pnum].InvBody[INVLOC_HEAD]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_HEAD);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_HEAD];
-		plr[pnum].InvBody[INVLOC_HEAD]._itype = ITYPE_NONE;
-	}
-
-	if (
-	    r == SLOTXY_RING_LEFT
-	    && plr[pnum].InvBody[INVLOC_RING_LEFT]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_RING_LEFT);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_RING_LEFT];
-		plr[pnum].InvBody[INVLOC_RING_LEFT]._itype = ITYPE_NONE;
-	}
-
-	if (
-	    r == SLOTXY_RING_RIGHT
-	    && plr[pnum].InvBody[INVLOC_RING_RIGHT]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_RING_RIGHT);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_RING_RIGHT];
-		plr[pnum].InvBody[INVLOC_RING_RIGHT]._itype = ITYPE_NONE;
-	}
-
-	if (
-	    r == SLOTXY_AMULET
-	    && plr[pnum].InvBody[INVLOC_AMULET]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_AMULET);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_AMULET];
-		plr[pnum].InvBody[INVLOC_AMULET]._itype = ITYPE_NONE;
-	}
-
-	if (
-	    r >= SLOTXY_HAND_LEFT_FIRST
-	    && r <= SLOTXY_HAND_LEFT_LAST
-	    && plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_HAND_LEFT);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_HAND_LEFT];
-		plr[pnum].InvBody[INVLOC_HAND_LEFT]._itype = ITYPE_NONE;
-	}
-
-	if (
-	    r >= SLOTXY_HAND_RIGHT_FIRST
-	    && r <= SLOTXY_HAND_RIGHT_LAST
-	    && plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_HAND_RIGHT);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_HAND_RIGHT];
-		plr[pnum].InvBody[INVLOC_HAND_RIGHT]._itype = ITYPE_NONE;
-	}
-
-	if (
-	    r >= SLOTXY_CHEST_FIRST
-	    && r <= SLOTXY_CHEST_LAST
-	    && plr[pnum].InvBody[INVLOC_CHEST]._itype != ITYPE_NONE) {
-		NetSendCmdDelItem(FALSE, INVLOC_CHEST);
-		plr[pnum].HoldItem = plr[pnum].InvBody[INVLOC_CHEST];
-		plr[pnum].InvBody[INVLOC_CHEST]._itype = ITYPE_NONE;
-	}
+	EquipmentCut(pnum, r, SLOTXY_HEAD_FIRST, SLOTXY_HEAD_LAST, INVLOC_HEAD);
+	EquipmentCut(pnum, r, SLOTXY_RING_LEFT, SLOTXY_RING_LEFT, INVLOC_RING_LEFT);
+	EquipmentCut(pnum, r, SLOTXY_RING_RIGHT, SLOTXY_RING_RIGHT, INVLOC_RING_RIGHT);
+	EquipmentCut(pnum, r, SLOTXY_RING_LEFT_2, SLOTXY_RING_LEFT_2, INVLOC_RING_LEFT_2);
+	EquipmentCut(pnum, r, SLOTXY_RING_RIGHT_2, SLOTXY_RING_RIGHT_2, INVLOC_RING_RIGHT_2);
+	EquipmentCut(pnum, r, SLOTXY_AMULET, SLOTXY_AMULET, INVLOC_AMULET);
+	EquipmentCut(pnum, r, SLOTXY_HAND_LEFT_FIRST, SLOTXY_HAND_LEFT_LAST, INVLOC_HAND_LEFT);
+	EquipmentCut(pnum, r, SLOTXY_HAND_RIGHT_FIRST, SLOTXY_HAND_RIGHT_LAST, INVLOC_HAND_RIGHT);
+	EquipmentCut(pnum, r, SLOTXY_CHEST_FIRST, SLOTXY_CHEST_LAST, INVLOC_CHEST);
 
 	if (r >= SLOTXY_INV_FIRST && r <= SLOTXY_INV_LAST) {
 		ig = r - SLOTXY_INV_FIRST;
@@ -1528,8 +1200,7 @@ void CheckInvItem()
  */
 void CheckInvScrn()
 {
-	if (MouseX > 190 + PANEL_LEFT && MouseX < 437 + PANEL_LEFT
-	    && MouseY > PANEL_TOP && MouseY < 33 + PANEL_TOP) {
+	if (MouseX > 190 + PANEL_LEFT && MouseX < 437 + PANEL_LEFT && MouseY > PANEL_TOP && MouseY < 33 + PANEL_TOP) {
 		CheckInvItem();
 	}
 }
@@ -2101,10 +1772,10 @@ int InvPutItem(int pnum, int x, int y)
 	if (numitems >= MAXITEMS)
 		return -1;
 
-	if (FindGetItem(plr[pnum].HoldItem.IDidx, plr[pnum].HoldItem._iCreateInfo, plr[pnum].HoldItem._iSeed) != -1) {
-		DrawInvMsg("A duplicate item has been detected.  Destroying duplicate...");
-		SyncGetItem(x, y, plr[pnum].HoldItem.IDidx, plr[pnum].HoldItem._iCreateInfo, plr[pnum].HoldItem._iSeed);
-	}
+	//if (FindGetItem(plr[pnum].HoldItem.IDidx, plr[pnum].HoldItem._iCreateInfo, plr[pnum].HoldItem._iSeed) != -1) {
+	//	DrawInvMsg("A duplicate item has been detected.  Destroying duplicate...");
+	//	SyncGetItem(x, y, plr[pnum].HoldItem.IDidx, plr[pnum].HoldItem._iCreateInfo, plr[pnum].HoldItem._iSeed);
+	//}
 
 	d = GetDirection(plr[pnum]._px, plr[pnum]._py, x, y);
 	xx = x - plr[pnum]._px;
@@ -2199,10 +1870,10 @@ int SyncPutItem(int pnum, int x, int y, int idx, WORD icreateinfo, int iseed, in
 	if (numitems >= MAXITEMS)
 		return -1;
 
-	if (FindGetItem(idx, icreateinfo, iseed) != -1) {
-		DrawInvMsg("A duplicate item has been detected from another player.");
-		SyncGetItem(x, y, idx, icreateinfo, iseed);
-	}
+	//if (FindGetItem(idx, icreateinfo, iseed) != -1) {
+	//	DrawInvMsg("A duplicate item has been detected from another player.");
+	//	SyncGetItem(x, y, idx, icreateinfo, iseed);
+	//}
 
 	d = GetDirection(plr[pnum]._px, plr[pnum]._py, x, y);
 	xx = x - plr[pnum]._px;
@@ -2317,6 +1988,12 @@ char CheckInvHLight()
 		pi = &p->InvBody[rv];
 	} else if (r == SLOTXY_RING_RIGHT) {
 		rv = INVLOC_RING_RIGHT;
+		pi = &p->InvBody[rv];
+	} else if (r == SLOTXY_RING_LEFT_2) {
+		rv = INVLOC_RING_LEFT_2;
+		pi = &p->InvBody[rv];
+	} else if (r == SLOTXY_RING_RIGHT_2) {
+		rv = INVLOC_RING_RIGHT_2;
 		pi = &p->InvBody[rv];
 	} else if (r == SLOTXY_AMULET) {
 		rv = INVLOC_AMULET;

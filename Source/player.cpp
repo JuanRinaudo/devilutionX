@@ -143,16 +143,16 @@ const char *const ClassStrTblOld[] = {
 /** Maps from player_class to maximum stats. */
 int MaxStats[NUM_CLASSES][4] = {
 	// clang-format off
-	{ 250,  50,  60, 100 },
-	{  55,  70, 250,  80 },
-	{  45, 250,  85,  80 },
-	{ 150,  80, 150,  80 },
-	{ 120, 120, 120, 100 },
-	{ 255,   0,  55, 150 },
+	{ 500, 100, 120, 200 },
+	{ 110, 140, 500, 160 },
+	{  90, 500, 190, 160 },
+	{ 300, 160, 300, 160 },
+	{ 240, 240, 240, 400 },
+	{ 510,   0, 110, 300 },
 	// clang-format on
 };
 /** Specifies the experience point limit of each level. */
-int ExpLvlsTbl[MAXCHARLEVEL] = {
+int64_t ExpLvlsTbl[MAXCHARLEVEL] = {
 	0,
 	2000,
 	4620,
@@ -203,7 +203,57 @@ int ExpLvlsTbl[MAXCHARLEVEL] = {
 	892680222,
 	1082908612,
 	1310707109,
-	1583495809
+	1583495809,
+	1909695946,
+	2301183615,
+	2770625072,
+	3333061961,
+	4006340478,
+	4811614914,
+	5773937896,
+	6922951538,
+	8293695942,
+	9927554043,
+	11873354635,
+	14188658789,
+	16941258594,
+	20210921503,
+	24091418432,
+	28692879352,
+	34144526429,
+	40597841924,
+	48230236206,
+	57249290376,
+	67897658386,
+	80458725188,
+	95263130622,
+	112696283526,
+	133207007128,
+	157317475418,
+	185634620994,
+	218863218151,
+	257820870982,
+	303455165146,
+	356863274212,
+	419314347199,
+	492275043612,
+	577438626157,
+	676758069856,
+	792483699801,
+	927205928767,
+	1083903730729,
+	1265999557491,
+	1477421483592,
+	1722673449868,
+	2006914569096,
+	2336048558428,
+	2716824473452,
+	3156950038151,
+	3665218994294,
+	4251654033381,
+	4927667024688,
+	5706238414589,
+	6602117845680
 };
 const char *const ClassStrTbl[] = {
 	"Warrior",
@@ -348,7 +398,7 @@ void InitPlayerGFX(int pnum)
 		app_fatal("InitPlayerGFX: illegal player %d", pnum);
 	}
 
-	if (plr[pnum]._pHitPoints >> 6 == 0) {
+	if (plr[pnum]._pHitPoints >> HPMANASHIFT == 0) {
 		plr[pnum]._pgfxnum = 0;
 		LoadPlrGFX(pnum, PFILE_DEATH);
 	} else {
@@ -743,7 +793,7 @@ void CreatePlayer(int pnum, char c)
 
 	plr[pnum]._pBaseToBlk = ToBlkTbl[c];
 
-	plr[pnum]._pHitPoints = (plr[pnum]._pVitality + 10) << 6;
+	plr[pnum]._pHitPoints = (plr[pnum]._pVitality + 10) << HPMANASHIFT;
 	if (plr[pnum]._pClass == PC_WARRIOR || plr[pnum]._pClass == PC_BARBARIAN) {
 		plr[pnum]._pHitPoints <<= 1;
 	} else if (plr[pnum]._pClass == PC_ROGUE || plr[pnum]._pClass == PC_MONK || plr[pnum]._pClass == PC_BARD) {
@@ -754,7 +804,7 @@ void CreatePlayer(int pnum, char c)
 	plr[pnum]._pHPBase = plr[pnum]._pHitPoints;
 	plr[pnum]._pMaxHPBase = plr[pnum]._pHitPoints;
 
-	plr[pnum]._pMana = plr[pnum]._pMagic << 6;
+	plr[pnum]._pMana = plr[pnum]._pMagic << HPMANASHIFT;
 	if (plr[pnum]._pClass == PC_SORCERER) {
 		plr[pnum]._pMana <<= 1;
 	} else if (plr[pnum]._pClass == PC_BARD) {
@@ -956,8 +1006,8 @@ void AddPlrExperience(int pnum, int lvl, int exp)
 	// Prevent power leveling
 	if (gbMaxPlayers > 1) {
 		powerLvlCap = plr[pnum]._pLevel < 0 ? 0 : plr[pnum]._pLevel;
-		if (powerLvlCap >= 50) {
-			powerLvlCap = 50;
+		if (powerLvlCap >= 100) {
+			powerLvlCap = 100;
 		}
 		// cap to 1/20 of current levels xp
 		if (exp >= ExpLvlsTbl[powerLvlCap] / 20) {
@@ -975,8 +1025,8 @@ void AddPlrExperience(int pnum, int lvl, int exp)
 		plr[pnum]._pExperience = MAXEXP;
 	}
 
-	if (plr[pnum]._pExperience >= ExpLvlsTbl[49]) {
-		plr[pnum]._pLevel = 50;
+	if (plr[pnum]._pExperience >= ExpLvlsTbl[MAXCHARLEVEL - 1]) {
+		plr[pnum]._pLevel = MAXCHARLEVEL - 1;
 		return;
 	}
 
@@ -1047,7 +1097,7 @@ void InitPlayer(int pnum, BOOL FirstTime)
 
 		ClearPlrPVars(pnum);
 
-		if (plr[pnum]._pHitPoints >> 6 > 0) {
+		if (plr[pnum]._pHitPoints >> HPMANASHIFT > 0) {
 			plr[pnum]._pmode = PM_STAND;
 			NewPlrAnim(pnum, plr[pnum]._pNAnim[DIR_S], plr[pnum]._pNFrames, 3, plr[pnum]._pNWidth);
 			plr[pnum]._pAnimFrame = random_(2, plr[pnum]._pNFrames - 1) + 1;
@@ -1671,10 +1721,10 @@ void StartPlrHit(int pnum, int dam, BOOL forcehit)
 
 	drawhpflag = TRUE;
 	if (plr[pnum]._pClass == PC_BARBARIAN) {
-		if (dam >> 6 < plr[pnum]._pLevel + plr[pnum]._pLevel / 4 && !forcehit) {
+		if (dam >> HPMANASHIFT < plr[pnum]._pLevel + plr[pnum]._pLevel / 4 && !forcehit) {
 			return;
 		}
-	} else if (dam >> 6 < plr[pnum]._pLevel && !forcehit) {
+	} else if (dam >> HPMANASHIFT < plr[pnum]._pLevel && !forcehit) {
 		return;
 	}
 
@@ -1700,10 +1750,10 @@ void RespawnDeadItem(ItemStruct *itm, int x, int y)
 		return;
 	}
 
-	if (FindGetItem(itm->IDidx, itm->_iCreateInfo, itm->_iSeed) >= 0) {
-		DrawInvMsg("A duplicate item has been detected.  Destroying duplicate...");
-		SyncGetItem(x, y, itm->IDidx, itm->_iCreateInfo, itm->_iSeed);
-	}
+	//if (FindGetItem(itm->IDidx, itm->_iCreateInfo, itm->_iSeed) >= 0) {
+	//	DrawInvMsg("A duplicate item has been detected.  Destroying duplicate...");
+	//	SyncGetItem(x, y, itm->IDidx, itm->_iCreateInfo, itm->_iSeed);
+	//}
 
 	ii = itemavail[0];
 	dItem[x][y] = ii + 1;
@@ -2384,7 +2434,7 @@ BOOL PlrHitMonst(int pnum, int m)
 		app_fatal("PlrHitMonst: illegal monster %d", m);
 	}
 
-	if ((monster[m]._mhitpoints >> 6) <= 0) {
+	if ((monster[m]._mhitpoints >> HPMANASHIFT) <= 0) {
 		return FALSE;
 	}
 
@@ -2463,7 +2513,7 @@ BOOL PlrHitMonst(int pnum, int m)
 		dam = random_(5, maxd - mind + 1) + mind;
 		dam += dam * plr[pnum]._pIBonusDam / 100;
 		dam += plr[pnum]._pIBonusDamMod;
-		int dam2 = dam << 6;
+		int dam2 = dam << HPMANASHIFT;
 		dam += plr[pnum]._pDamageMod;
 		if (plr[pnum]._pClass == PC_WARRIOR || plr[pnum]._pClass == PC_BARBARIAN) {
 			ddp = plr[pnum]._pLevel;
@@ -2522,13 +2572,13 @@ BOOL PlrHitMonst(int pnum, int m)
 
 		if (pnum == myplr) {
 			if (plr[pnum].pDamAcFlags & 0x04) {
-				dam2 += plr[pnum]._pIGetHit << 6;
+				dam2 += plr[pnum]._pIGetHit << HPMANASHIFT;
 				if (dam2 >= 0) {
 					if (plr[pnum]._pHitPoints > dam2) {
 						plr[pnum]._pHitPoints -= dam2;
 						plr[pnum]._pHPBase -= dam2;
 					} else {
-						dam2 = (1 << 6);
+						dam2 = (1 << HPMANASHIFT);
 						plr[pnum]._pHPBase -= plr[pnum]._pHitPoints - dam2;
 						plr[pnum]._pHitPoints = dam2;
 					}
@@ -2592,7 +2642,7 @@ BOOL PlrHitMonst(int pnum, int m)
 			monster[m]._mhitpoints = 0; /* double check */
 		}
 #endif
-		if ((monster[m]._mhitpoints >> 6) <= 0) {
+		if ((monster[m]._mhitpoints >> HPMANASHIFT) <= 0) {
 			if (monster[m]._mmode == MM_STONE) {
 				M_StartKill(m, pnum);
 				monster[m]._mmode = MM_STONE;
@@ -2685,7 +2735,7 @@ BOOL PlrHitPlr(int pnum, char p)
 					dam <<= 1;
 				}
 			}
-			skdam = dam << 6;
+			skdam = dam << HPMANASHIFT;
 			if (plr[pnum]._pIFlags & ISPL_RNDSTEALLIFE) {
 				tac = random_(7, skdam >> 3);
 				plr[pnum]._pHitPoints += tac;
@@ -3505,28 +3555,28 @@ void ValidatePlayer()
 
 static void CheckCheatStats(int pnum)
 {
-	if (plr[pnum]._pStrength > 750) {
-		plr[pnum]._pStrength = 750;
+	if (plr[pnum]._pStrength > 1000) {
+		plr[pnum]._pStrength = 1000;
 	}
 
-	if (plr[pnum]._pDexterity > 750) {
-		plr[pnum]._pDexterity = 750;
+	if (plr[pnum]._pDexterity > 1000) {
+		plr[pnum]._pDexterity = 1000;
 	}
 
-	if (plr[pnum]._pMagic > 750) {
-		plr[pnum]._pMagic = 750;
+	if (plr[pnum]._pMagic > 1000) {
+		plr[pnum]._pMagic = 1000;
 	}
 
-	if (plr[pnum]._pVitality > 750) {
-		plr[pnum]._pVitality = 750;
+	if (plr[pnum]._pVitality > 1000) {
+		plr[pnum]._pVitality = 1000;
 	}
 
-	if (plr[pnum]._pHitPoints > 128000) {
-		plr[pnum]._pHitPoints = 128000;
+	if (plr[pnum]._pHitPoints > 150000) {
+		plr[pnum]._pHitPoints = 150000;
 	}
 
-	if (plr[pnum]._pMana > 128000) {
-		plr[pnum]._pMana = 128000;
+	if (plr[pnum]._pMana > 150000) {
+		plr[pnum]._pMana = 150000;
 	}
 }
 
@@ -3571,7 +3621,7 @@ void ProcessPlayers()
 		if (plr[pnum].plractive && currlevel == plr[pnum].plrlevel && (pnum == myplr || !plr[pnum]._pLvlChanging)) {
 			CheckCheatStats(pnum);
 
-			if (!PlrDeathModeOK(pnum) && (plr[pnum]._pHitPoints >> 6) <= 0) {
+			if (!PlrDeathModeOK(pnum) && (plr[pnum]._pHitPoints >> HPMANASHIFT) <= 0) {
 				SyncPlrKill(pnum, -1);
 			}
 
@@ -3579,7 +3629,7 @@ void ProcessPlayers()
 				if ((plr[pnum]._pIFlags & ISPL_DRAINLIFE) && currlevel != 0) {
 					plr[pnum]._pHitPoints -= 4;
 					plr[pnum]._pHPBase -= 4;
-					if ((plr[pnum]._pHitPoints >> 6) <= 0) {
+					if ((plr[pnum]._pHitPoints >> HPMANASHIFT) <= 0) {
 						SyncPlrKill(pnum, 0);
 					}
 					drawhpflag = TRUE;
@@ -3679,7 +3729,7 @@ BOOL PosOkPlayer(int pnum, int x, int y)
 		if (dMonster[x][y] <= 0) {
 			return FALSE;
 		}
-		if ((monster[dMonster[x][y] - 1]._mhitpoints >> 6) > 0) {
+		if ((monster[dMonster[x][y] - 1]._mhitpoints >> HPMANASHIFT) > 0) {
 			return FALSE;
 		}
 	}
@@ -3810,7 +3860,7 @@ void CheckPlrSpell()
 			return;
 
 		if (
-		    ((chrflag || questlog) && MouseX < SPANEL_WIDTH && MouseY < SPANEL_HEIGHT)    // inside left panel
+		    ((chrflag || questlog || juaneditorflag) && MouseX < SPANEL_WIDTH && MouseY < SPANEL_HEIGHT)    // inside left panel
 		    || ((invflag || sbookflag) && MouseX > RIGHT_PANEL && MouseY < SPANEL_HEIGHT) // inside right panel
 		) {
 			if (rspell != SPL_HEAL
@@ -4088,7 +4138,7 @@ void ModifyPlrMag(int p, int l)
 	plr[p]._pMagic += l;
 	plr[p]._pBaseMag += l;
 
-	ms = l << 6;
+	ms = l << HPMANASHIFT;
 	if (plr[p]._pClass == PC_SORCERER) {
 		ms <<= 1;
 	} else if (plr[p]._pClass == PC_BARD) {
@@ -4151,7 +4201,7 @@ void ModifyPlrVit(int p, int l)
 	plr[p]._pVitality += l;
 	plr[p]._pBaseVit += l;
 
-	ms = l << 6;
+	ms = l << HPMANASHIFT;
 	if (plr[p]._pClass == PC_WARRIOR) {
 		ms <<= 1;
 	} else if (plr[p]._pClass == PC_BARBARIAN) {
@@ -4214,7 +4264,7 @@ void SetPlrMag(int p, int v)
 
 	plr[p]._pBaseMag = v;
 
-	m = v << 6;
+	m = v << HPMANASHIFT;
 	if (plr[p]._pClass == PC_SORCERER) {
 		m <<= 1;
 	} else if (plr[p]._pClass == PC_BARD) {
@@ -4256,7 +4306,7 @@ void SetPlrVit(int p, int v)
 
 	plr[p]._pBaseVit = v;
 
-	hp = v << 6;
+	hp = v << HPMANASHIFT;
 	if (plr[p]._pClass == PC_WARRIOR) {
 		hp <<= 1;
 	} else if (plr[p]._pClass == PC_BARBARIAN) {

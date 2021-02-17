@@ -19,6 +19,7 @@ typedef struct RECT32 {
 	int h;
 } RECT32;
 
+extern BOOL drawExpFlag;
 extern BOOL drawhpflag;
 extern BOOL dropGoldFlag;
 extern BOOL panbtn[8];
@@ -61,6 +62,7 @@ void UpdateLifeFlask();
 void DrawManaFlask();
 void control_update_life_mana();
 void UpdateManaFlask();
+void UpdateExpBar();
 void InitControlPan();
 void DrawCtrlPan();
 void DrawCtrlBtns();

@@ -101,7 +101,7 @@ static void CopyInts(const void *src, const int n, void *dst)
 
 static void CopyInt64(const void *src, void *dst)
 {
-	unsigned long long buf;
+	uint64_t buf;
 	memcpy(&buf, src, 8);
 	buf = SDL_SwapLE64(buf);
 	memcpy(dst, &buf, 8);
@@ -300,9 +300,9 @@ static void LoadPlayer(int i)
 	CopyChar(tbuff, &pPlayer->_pLevel);
 	CopyChar(tbuff, &pPlayer->_pMaxLvl);
 	tbuff += 2; // Alignment
-	CopyInt(tbuff, &pPlayer->_pExperience);
-	CopyInt(tbuff, &pPlayer->_pMaxExp);
-	CopyInt(tbuff, &pPlayer->_pNextExper);
+	CopyInt64(tbuff, &pPlayer->_pExperience);
+	CopyInt64(tbuff, &pPlayer->_pMaxExp);
+	CopyInt64(tbuff, &pPlayer->_pNextExper);
 	CopyChar(tbuff, &pPlayer->_pArmorClass);
 	CopyChar(tbuff, &pPlayer->_pMagResist);
 	CopyChar(tbuff, &pPlayer->_pFireResist);
@@ -1173,9 +1173,9 @@ static void SavePlayer(int i)
 	CopyChar(&pPlayer->_pLevel, tbuff);
 	CopyChar(&pPlayer->_pMaxLvl, tbuff);
 	tbuff += 2; // Alignment
-	CopyInt(&pPlayer->_pExperience, tbuff);
-	CopyInt(&pPlayer->_pMaxExp, tbuff);
-	CopyInt(&pPlayer->_pNextExper, tbuff);
+	CopyInt64(&pPlayer->_pExperience, tbuff);
+	CopyInt64(&pPlayer->_pMaxExp, tbuff);
+	CopyInt64(&pPlayer->_pNextExper, tbuff);
 	CopyChar(&pPlayer->_pArmorClass, tbuff);
 	CopyChar(&pPlayer->_pMagResist, tbuff);
 	CopyChar(&pPlayer->_pFireResist, tbuff);

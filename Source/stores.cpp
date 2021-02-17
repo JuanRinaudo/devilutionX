@@ -1309,6 +1309,14 @@ void AddStoreHoldId(ItemStruct itm, int i)
 	storenumh++;
 }
 
+void AddIdentifyFromEquipment(dvl::inv_body_loc location, BOOL* idok, int index)
+{
+	if (IdItemOk(&plr[myplr].InvBody[location])) {
+		*idok = TRUE;
+		AddStoreHoldId(plr[myplr].InvBody[location], index);
+	}
+}
+
 void S_StartSIdentify()
 {
 	BOOL idok;
@@ -1320,35 +1328,16 @@ void S_StartSIdentify()
 
 	for (i = 0; i < 48; i++)
 		storehold[i]._itype = ITYPE_NONE;
-
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_HEAD])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_HEAD], -1);
-	}
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_CHEST])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_CHEST], -2);
-	}
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_HAND_LEFT])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_HAND_LEFT], -3);
-	}
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_HAND_RIGHT])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_HAND_RIGHT], -4);
-	}
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_RING_LEFT])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_RING_LEFT], -5);
-	}
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_RING_RIGHT])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_RING_RIGHT], -6);
-	}
-	if (IdItemOk(&plr[myplr].InvBody[INVLOC_AMULET])) {
-		idok = TRUE;
-		AddStoreHoldId(plr[myplr].InvBody[INVLOC_AMULET], -7);
-	}
+	
+	AddIdentifyFromEquipment(INVLOC_HEAD, &idok, -1);
+	AddIdentifyFromEquipment(INVLOC_CHEST, &idok, -2);
+	AddIdentifyFromEquipment(INVLOC_HAND_LEFT, &idok, -3);
+	AddIdentifyFromEquipment(INVLOC_HAND_RIGHT, &idok, -4);
+	AddIdentifyFromEquipment(INVLOC_RING_LEFT, &idok, -5);
+	AddIdentifyFromEquipment(INVLOC_RING_RIGHT, &idok, -6);
+	AddIdentifyFromEquipment(INVLOC_RING_LEFT_2, &idok, -7);
+	AddIdentifyFromEquipment(INVLOC_RING_RIGHT_2, &idok, -8);
+	AddIdentifyFromEquipment(INVLOC_AMULET, &idok, -9);
 
 	for (i = 0; i < plr[myplr]._pNumInv; i++) {
 		if (storenumh >= 48)
@@ -2490,6 +2479,10 @@ void StoryIdItem()
 		if (idx == -6)
 			plr[myplr].InvBody[INVLOC_RING_RIGHT]._iIdentified = TRUE;
 		if (idx == -7)
+			plr[myplr].InvBody[INVLOC_RING_LEFT_2]._iIdentified = TRUE;
+		if (idx == -8)
+			plr[myplr].InvBody[INVLOC_RING_RIGHT_2]._iIdentified = TRUE;
+		if (idx == -9)
 			plr[myplr].InvBody[INVLOC_AMULET]._iIdentified = TRUE;
 	} else {
 		plr[myplr].InvList[idx]._iIdentified = TRUE;

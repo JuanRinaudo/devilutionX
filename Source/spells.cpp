@@ -49,8 +49,8 @@ int GetManaAmount(int id, int sn)
 		ma -= ma >> 2;
 	}
 
-	if (spelldata[sn].sMinMana > ma >> 6) {
-		ma = spelldata[sn].sMinMana << 6;
+	if (spelldata[sn].sMinMana > ma >> HPMANASHIFT) {
+		ma = spelldata[sn].sMinMana << HPMANASHIFT;
 	}
 
 	return ma * (100 - plr[id]._pISplCost) / 100;
@@ -95,7 +95,7 @@ void UseMana(int id, int sn)
  * @param spellId The id of the spell to get a bitmask for.
  * @return A 64bit bitmask representation for the specified spell.
  */
-unsigned long long GetSpellBitmask(int spellId)
+uint64_t GetSpellBitmask(int spellId)
 {
 	return 1ULL << (spellId - 1);
 }
@@ -282,8 +282,8 @@ void DoResurrect(int pnum, int rid)
 		plr[rid]._pInvincible = FALSE;
 		PlacePlayer(rid);
 
-		hp = 10 << 6;
-		if (plr[rid]._pMaxHPBase < (10 << 6)) {
+		hp = 10 << HPMANASHIFT;
+		if (plr[rid]._pMaxHPBase < (10 << HPMANASHIFT)) {
 			hp = plr[rid]._pMaxHPBase;
 		}
 		SetPlayerHitPoints(rid, hp);
@@ -310,15 +310,15 @@ void DoHealOther(int pnum, int rid)
 		NewCursor(CURSOR_HAND);
 	}
 
-	if ((char)rid != -1 && (plr[rid]._pHitPoints >> 6) > 0) {
-		hp = (random_(57, 10) + 1) << 6;
+	if ((char)rid != -1 && (plr[rid]._pHitPoints >> HPMANASHIFT) > 0) {
+		hp = (random_(57, 10) + 1) << HPMANASHIFT;
 
 		for (i = 0; i < plr[pnum]._pLevel; i++) {
-			hp += (random_(57, 4) + 1) << 6;
+			hp += (random_(57, 4) + 1) << HPMANASHIFT;
 		}
 
 		for (j = 0; j < GetSpellLevel(pnum, SPL_HEALOTHER); ++j) {
-			hp += (random_(57, 6) + 1) << 6;
+			hp += (random_(57, 6) + 1) << HPMANASHIFT;
 		}
 
 		if (plr[pnum]._pClass == PC_WARRIOR || plr[pnum]._pClass == PC_BARBARIAN) {

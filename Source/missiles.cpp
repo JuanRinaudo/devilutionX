@@ -494,7 +494,7 @@ BOOL MonsterTrapHit(int m, int mindam, int maxdam, int dist, int t, BOOLEAN shif
 	if (monster[m].mtalkmsg) {
 		return FALSE;
 	}
-	if (monster[m]._mhitpoints >> 6 <= 0) {
+	if (monster[m]._mhitpoints >> HPMANASHIFT <= 0) {
 		return FALSE;
 	}
 	if (monster[m].MType->mtype == MT_ILLWEAV && monster[m]._mgoal == MGOAL_RETREAT)
@@ -541,7 +541,7 @@ BOOL MonsterTrapHit(int m, int mindam, int maxdam, int dist, int t, BOOLEAN shif
 		if (debug_mode_dollar_sign || debug_mode_key_inverted_v)
 			monster[m]._mhitpoints = 0;
 #endif
-		if (monster[m]._mhitpoints >> 6 <= 0) {
+		if (monster[m]._mhitpoints >> HPMANASHIFT <= 0) {
 			if (monster[m]._mmode == MM_STONE) {
 				M_StartKill(m, -1);
 				monster[m]._mmode = MM_STONE;
@@ -573,7 +573,7 @@ BOOL MonsterMHit(int pnum, int m, int mindam, int maxdam, int dist, int t, BOOLE
 
 	resist = FALSE;
 	if (monster[m].mtalkmsg
-	    || monster[m]._mhitpoints >> 6 <= 0
+	    || monster[m]._mhitpoints >> HPMANASHIFT <= 0
 	    || t == MIS_HBOLT && monster[m].MType->mtype != MT_DIABLO && monster[m].MData->mMonstClass != MC_UNDEAD) {
 		return FALSE;
 	}
@@ -638,7 +638,7 @@ BOOL MonsterMHit(int pnum, int m, int mindam, int maxdam, int dist, int t, BOOLE
 	if (hit < hper) {
 #endif
 		if (t == MIS_BONESPIRIT) {
-			dam = monster[m]._mhitpoints / 3 >> 6;
+			dam = monster[m]._mhitpoints / 3 >> HPMANASHIFT;
 		} else {
 			dam = mindam + random_(70, maxdam - mindam + 1);
 		}
@@ -658,7 +658,7 @@ BOOL MonsterMHit(int pnum, int m, int mindam, int maxdam, int dist, int t, BOOLE
 		if ((gbIsHellfire && plr[pnum]._pIFlags & ISPL_NOHEALMON) || (!gbIsHellfire && plr[pnum]._pIFlags & ISPL_FIRE_ARROWS))
 			monster[m]._mFlags |= MFLAG_NOHEAL;
 
-		if (monster[m]._mhitpoints >> 6 <= 0) {
+		if (monster[m]._mhitpoints >> HPMANASHIFT <= 0) {
 			if (monster[m]._mmode == MM_STONE) {
 				M_StartKill(m, pnum);
 				monster[m]._mmode = MM_STONE;
@@ -697,7 +697,7 @@ BOOL PlayerMHit(int pnum, int m, int dist, int mind, int maxd, int mtype, BOOLEA
 	int hit, hper, tac, dam, blk, blkper, resper;
 	*blocked = false;
 
-	if (plr[pnum]._pHitPoints >> 6 <= 0) {
+	if (plr[pnum]._pHitPoints >> HPMANASHIFT <= 0) {
 		return FALSE;
 	}
 
@@ -785,7 +785,7 @@ BOOL PlayerMHit(int pnum, int m, int dist, int mind, int maxd, int mtype, BOOLEA
 		} else {
 			if (shift == FALSE) {
 
-				dam = (mind << 6) + random_(75, (maxd - mind + 1) << 6);
+				dam = (mind << 6) + random_(75, (maxd - mind + 1) << HPMANASHIFT);
 				if (m == -1)
 					if (plr[pnum]._pIFlags & ISPL_ABSHALFTRAP)
 						dam >>= 1;
@@ -823,7 +823,7 @@ BOOL PlayerMHit(int pnum, int m, int dist, int mind, int maxd, int mtype, BOOLEA
 				plr[pnum]._pHPBase = plr[pnum]._pMaxHPBase;
 			}
 
-			if (plr[pnum]._pHitPoints >> 6 <= 0) {
+			if (plr[pnum]._pHitPoints >> HPMANASHIFT <= 0) {
 				SyncPlrKill(pnum, earflag);
 			} else {
 				if (plr[pnum]._pClass == PC_WARRIOR) {
@@ -851,7 +851,7 @@ BOOL PlayerMHit(int pnum, int m, int dist, int mind, int maxd, int mtype, BOOLEA
 			plr[pnum]._pHitPoints = plr[pnum]._pMaxHP;
 			plr[pnum]._pHPBase = plr[pnum]._pMaxHPBase;
 		}
-		if (plr[pnum]._pHitPoints >> 6 <= 0) {
+		if (plr[pnum]._pHitPoints >> HPMANASHIFT <= 0) {
 			SyncPlrKill(pnum, earflag);
 		} else {
 			StartPlrHit(pnum, dam, FALSE);
@@ -1873,12 +1873,12 @@ void missiles_rech_mana(int mi, int sx, int sy, int dx, int dy, int midir, char 
 {
 	int i, ManaAmount;
 
-	ManaAmount = (random_(57, 10) + 1) << 6;
+	ManaAmount = (random_(57, 10) + 1) << HPMANASHIFT;
 	for (i = 0; i < plr[id]._pLevel; i++) {
-		ManaAmount += (random_(57, 4) + 1) << 6;
+		ManaAmount += (random_(57, 4) + 1) << HPMANASHIFT;
 	}
 	for (i = 0; i < missile[mi]._mispllvl; i++) {
-		ManaAmount += (random_(57, 6) + 1) << 6;
+		ManaAmount += (random_(57, 6) + 1) << HPMANASHIFT;
 	}
 	if (plr[id]._pClass == PC_SORCERER)
 		ManaAmount <<= 1;
@@ -2881,12 +2881,12 @@ void AddHeal(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy, in
 	int i;
 	int HealAmount;
 
-	HealAmount = (random_(57, 10) + 1) << 6;
+	HealAmount = (random_(57, 10) + 1) << HPMANASHIFT;
 	for (i = 0; i < plr[id]._pLevel; i++) {
-		HealAmount += (random_(57, 4) + 1) << 6;
+		HealAmount += (random_(57, 4) + 1) << HPMANASHIFT;
 	}
 	for (i = 0; i < missile[mi]._mispllvl; i++) {
-		HealAmount += (random_(57, 6) + 1) << 6;
+		HealAmount += (random_(57, 6) + 1) << HPMANASHIFT;
 	}
 
 	if (plr[id]._pClass == PC_WARRIOR || plr[id]._pClass == PC_BARBARIAN || plr[id]._pClass == PC_MONK)
@@ -3049,7 +3049,7 @@ void AddBlodboil(int mi, int sx, int sy, int dx, int dy, int midir, char mienemy
 {
 	int lvl;
 
-	if (id == -1 || plr[id]._pSpellFlags & 6 || plr[id]._pHitPoints <= plr[id]._pLevel << 6) {
+	if (id == -1 || plr[id]._pSpellFlags & 6 || plr[id]._pHitPoints <= plr[id]._pLevel << HPMANASHIFT) {
 		missile[mi]._miDelFlag = TRUE;
 	} else {
 		int blodboilSFX[NUM_CLASSES] = {
@@ -3402,7 +3402,7 @@ int Sentfire(int i, int sx, int sy)
 
 	ex = 0;
 	if (LineClear(missile[i]._mix, missile[i]._miy, sx, sy)) {
-		if (dMonster[sx][sy] > 0 && monster[dMonster[sx][sy] - 1]._mhitpoints >> 6 > 0 && dMonster[sx][sy] - 1 > MAX_PLRS - 1) {
+		if (dMonster[sx][sy] > 0 && monster[dMonster[sx][sy] - 1]._mhitpoints >> HPMANASHIFT > 0 && dMonster[sx][sy] - 1 > MAX_PLRS - 1) {
 			dir = GetDirection(missile[i]._mix, missile[i]._miy, sx, sy);
 			missile[i]._miVar3 = missileavail[0];
 			AddMissile(missile[i]._mix, missile[i]._miy, sx, sy, dir, MIS_FIREBOLT, TARGET_MONSTERS, missile[i]._misource, missile[i]._midam, GetSpellLevel(missile[i]._misource, SPL_FIREBOLT));
@@ -4389,7 +4389,7 @@ void MI_Lightctrl(int i)
 	p = missile[i]._misource;
 	if (p != -1) {
 		if (missile[i]._micaster == TARGET_MONSTERS) {
-			dam = (random_(79, 2) + random_(79, plr[p]._pLevel) + 2) << 6;
+			dam = (random_(79, 2) + random_(79, plr[p]._pLevel) + 2) << HPMANASHIFT;
 		} else {
 			dam = 2 * (monster[p].mMinDamage + random_(80, monster[p].mMaxDamage - monster[p].mMinDamage + 1));
 		}
@@ -4614,7 +4614,7 @@ void MI_Manashield(int i)
 				missile[i]._miDelFlag = TRUE;
 				if (plr[id]._pHitPoints < 0)
 					SetPlayerHitPoints(id, 0);
-				if ((plr[id]._pHitPoints >> 6) == 0 && id == myplr) {
+				if ((plr[id]._pHitPoints >> HPMANASHIFT) == 0 && id == myplr) {
 					SyncPlrKill(id, missile[i]._miVar8);
 				}
 			}

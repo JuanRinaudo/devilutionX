@@ -14,7 +14,7 @@ extern "C" {
 
 extern BOOL invflag;
 extern BOOL drawsbarflag;
-extern const InvXY InvRect[73];
+extern Vec2 InvRect[NUM_XY_SLOTS];
 
 void FreeInvGFX();
 void InitInv();

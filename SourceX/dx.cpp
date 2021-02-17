@@ -71,7 +71,7 @@ static void dx_create_primary_surface()
 	}
 }
 
-void dx_init(HWND hWnd)
+void dx_init()
 {
 	SDL_RaiseWindow(ghMainWnd);
 	SDL_ShowWindow(ghMainWnd);
@@ -154,14 +154,31 @@ void dx_reinit()
 	}
 #else
 	Uint32 flags = 0;
-	if (!fullscreen) {
+	if (fullscreen) {
 		flags = renderer ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN;
+
+		if (SDL_SetWindowFullscreen(ghMainWnd, flags)) {
+			ErrSdl();
+		}
+	} else {
+		if (SDL_SetWindowFullscreen(ghMainWnd, 0)) {
+			ErrSdl();
+		}
 	}
-	if (SDL_SetWindowFullscreen(ghMainWnd, flags)) {
-		ErrSdl();
-	}
+	
+	SDL_RaiseWindow(ghMainWnd);
+	SDL_ShowWindow(ghMainWnd);
+
+	dx_create_primary_surface();
+	dx_create_back_buffer();
+
+	gbActive = true;
+	int bufferWidth = BORDER_LEFT + screenWidth + borderRight;
+	gpBufStart = &gpBuffer[bufferWidth * SCREEN_Y];
+	gpBufEnd = (BYTE *)(bufferWidth * (screenHeight + SCREEN_Y));
+	SDL_DisableScreenSaver();
+
 #endif
-	fullscreen = !fullscreen;
 	force_redraw = 255;
 }
 

@@ -2065,7 +2065,7 @@ void Obj_BCrossDamage(int i)
 
 	plr[myplr]._pHitPoints -= damage[leveltype - 1];
 	plr[myplr]._pHPBase -= damage[leveltype - 1];
-	if (plr[myplr]._pHitPoints >> 6 <= 0) {
+	if (plr[myplr]._pHitPoints >> HPMANASHIFT <= 0) {
 		SyncPlrKill(myplr, 0);
 	} else {
 		if (plr[myplr]._pClass == PC_WARRIOR) {
@@ -3624,11 +3624,11 @@ void OperateShrine(int pnum, int i, int sType)
 		plr[pnum]._pMana -= t;
 		plr[pnum]._pMaxMana -= t;
 		plr[pnum]._pMaxManaBase -= t;
-		if (plr[pnum]._pMana >> 6 <= 0) {
+		if (plr[pnum]._pMana >> HPMANASHIFT <= 0) {
 			plr[pnum]._pMana = v1;
 			plr[pnum]._pManaBase = 0;
 		}
-		if (plr[pnum]._pMaxMana >> 6 <= 0) {
+		if (plr[pnum]._pMaxMana >> HPMANASHIFT <= 0) {
 			plr[pnum]._pMaxMana = v2;
 			plr[pnum]._pMaxManaBase = 0;
 		}
@@ -3756,11 +3756,11 @@ void OperateShrine(int pnum, int i, int sType)
 		plr[pnum]._pMana -= t;
 		plr[pnum]._pMaxMana -= t;
 		plr[pnum]._pMaxManaBase -= t;
-		if (plr[pnum]._pMana >> 6 <= 0) {
+		if (plr[pnum]._pMana >> HPMANASHIFT <= 0) {
 			plr[pnum]._pMana = v1;
 			plr[pnum]._pManaBase = 0;
 		}
-		if (plr[pnum]._pMaxMana >> 6 <= 0) {
+		if (plr[pnum]._pMaxMana >> HPMANASHIFT <= 0) {
 			plr[pnum]._pMaxMana = v2;
 			plr[pnum]._pMaxManaBase = 0;
 		}
@@ -3859,11 +3859,11 @@ void OperateShrine(int pnum, int i, int sType)
 		plr[pnum]._pMana -= t;
 		plr[pnum]._pMaxMana -= t;
 		plr[pnum]._pMaxManaBase -= t;
-		if (plr[pnum]._pMana >> 6 <= 0) {
+		if (plr[pnum]._pMana >> HPMANASHIFT <= 0) {
 			plr[pnum]._pMana = v1;
 			plr[pnum]._pManaBase = 0;
 		}
-		if (plr[pnum]._pMaxMana >> 6 <= 0) {
+		if (plr[pnum]._pMaxMana >> HPMANASHIFT <= 0) {
 			plr[pnum]._pMaxMana = v2;
 			plr[pnum]._pMaxManaBase = 0;
 		}

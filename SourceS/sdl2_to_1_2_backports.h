@@ -776,7 +776,7 @@ inline char *SDL_GetBasePath()
 			char path[64];
 			const int rc = (int)SDL_snprintf(path, sizeof(path),
 			    "/proc/%llu/exe",
-			    (unsigned long long)getpid());
+			    (uint64_t)getpid());
 			if ((rc > 0) && (static_cast<std::size_t>(rc) < sizeof(path))) {
 				retval = readSymLink(path);
 			}

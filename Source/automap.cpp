@@ -450,7 +450,7 @@ void SearchAutomapItem()
 				if (PANELS_COVER) {
 					if (invflag || sbookflag)
 						x -= 160;
-					if (chrflag || questlog)
+					if (chrflag || questlog || juaneditorflag)
 						x += 160;
 				}
 				y -= AmLine8;
@@ -491,7 +491,7 @@ static void DrawAutomapPlr(int pnum)
 	if (PANELS_COVER) {
 		if (invflag || sbookflag)
 			x -= SCREEN_WIDTH / 4;
-		if (chrflag || questlog)
+		if (chrflag || questlog || juaneditorflag)
 			x += SCREEN_WIDTH / 4;
 	}
 	y -= AmLine8;
@@ -682,7 +682,7 @@ void DrawAutomap()
 		if (invflag || sbookflag) {
 			sx -= SCREEN_WIDTH / 4;
 		}
-		if (chrflag || questlog) {
+		if (chrflag || questlog || juaneditorflag) {
 			sx += SCREEN_WIDTH / 4;
 		}
 	}

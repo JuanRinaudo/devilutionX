@@ -30,6 +30,8 @@ void gamemenu_sound_volume(BOOL bActivate);
 void gamemenu_loadjog(BOOL bActivate);
 void gamemenu_gamma(BOOL bActivate);
 void gamemenu_speed(BOOL bActivate);
+void gamemenu_fullscreen(BOOL bActivate);
+void gamemenu_resolution(BOOL bActivate);
 void gamemenu_color_cycling(BOOL bActivate);
 
 #ifdef __cplusplus
