@@ -22,7 +22,6 @@ typedef struct CornerStoneStruct {
 extern int itemactive[MAXITEMS];
 extern ItemStruct *itemToShow;
 extern int itemavail[MAXITEMS];
-extern ItemGetRecordStruct itemrecord[MAXITEMS];
 extern ItemStruct item[MAXITEMS + 1];
 extern CornerStoneStruct CornerStone;
 extern BOOL UniqueItemFlag[128];
@@ -50,6 +49,7 @@ void CalcPlrInv(int p, BOOL Loadgfx);
 void SetPlrHandItem(ItemStruct *h, int idata);
 void GetPlrHandSeed(ItemStruct *h);
 void GetGoldSeed(int pnum, ItemStruct *h);
+int GetGoldCursor(int value);
 void SetPlrHandGoldCurs(ItemStruct *h);
 void CreatePlrItems(int p);
 BOOL ItemSpaceOk(int i, int j);
