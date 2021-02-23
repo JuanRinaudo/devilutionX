@@ -77,8 +77,8 @@ int get_max_dexterity(int i);
 
 /* data */
 
-extern int plrxoff[9];
-extern int plryoff[9];
+extern int plrxoff[MAX_PLRS];
+extern int plryoff[MAX_PLRS];
 extern int plrxoff2[9];
 extern int plryoff2[9];
 extern int StrengthTbl[NUM_CLASSES];

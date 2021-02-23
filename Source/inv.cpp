@@ -2013,18 +2013,7 @@ char CheckInvHLight()
 		nGold = pi->_ivalue;
 		sprintf(infostr, "%i gold %s", nGold, get_pieces_str(nGold));
 	} else {
-		if (pi->_iMagical == ITEM_QUALITY_MAGIC) {
-			infoclr = COL_BLUE;
-		} else if (pi->_iMagical == ITEM_QUALITY_UNIQUE) {
-			infoclr = COL_GOLD;
-		}
-		strcpy(infostr, pi->_iName);
-		if (pi->_iIdentified) {
-			strcpy(infostr, pi->_iIName);
-			PrintItemDetails(pi);
-		} else {
-			PrintItemDur(pi);
-		}
+		itemToShow = pi;
 	}
 
 	return rv;

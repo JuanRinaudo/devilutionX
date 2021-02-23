@@ -829,7 +829,7 @@ BOOL PressEscKey()
 
 static void PressKey(int vkey)
 {
-	if (gmenu_presskeys(vkey) || control_presskeys(vkey)) {
+	if (gmenu_presskeys(vkey) || control_presskeys(vkey) || PressKeysJuanEditor(vkey)) {
 		return;
 	}
 
@@ -1051,7 +1051,7 @@ static void TryToUseBeltItem(int index)
  */
 static void PressChar(WPARAM vkey)
 {
-	if (gmenu_is_active() || control_talk_last_key(vkey) || sgnTimeoutCurs != CURSOR_NONE || deathflag) {
+	if (gmenu_is_active() || control_talk_last_key(vkey) || PressCharJuanEditor(vkey) || sgnTimeoutCurs != CURSOR_NONE || deathflag) {
 		return;
 	}
 	if ((char)vkey == 'p' || (char)vkey == 'P') {

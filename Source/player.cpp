@@ -51,9 +51,9 @@ const char CharCharHF[] = {
 /* data */
 
 /** Specifies the X-coordinate delta from the player start location in Tristram. */
-int plrxoff[9] = { 0, 2, 0, 2, 1, 0, 1, 2, 1 };
+int plrxoff[MAX_PLRS] = { 0, 2, 0, 2, 1, 0, 1, 2, 1, 3, 0, 3, 1, 3, 3, 2 };
 /** Specifies the Y-coordinate delta from the player start location in Tristram. */
-int plryoff[9] = { 0, 2, 2, 0, 1, 1, 0, 1, 2 };
+int plryoff[MAX_PLRS] = { 0, 2, 2, 0, 1, 1, 0, 1, 2, 3, 3, 0, 3, 1, 2, 3 };
 /** Specifies the X-coordinate delta from a player, used for instanced when casting resurrect. */
 int plrxoff2[9] = { 0, 1, 0, 1, 2, 0, 1, 2, 2 };
 /** Specifies the Y-coordinate delta from a player, used for instanced when casting resurrect. */
@@ -2189,9 +2189,9 @@ void RestartTownLvl(int pnum)
 	plr[pnum].plrlevel = 0;
 	plr[pnum]._pInvincible = FALSE;
 
-	SetPlayerHitPoints(pnum, 64);
+	SetPlayerHitPoints(pnum, plr[pnum]._pMaxHP);
 
-	plr[pnum]._pMana = 0;
+	plr[pnum]._pMana = plr[pnum]._pMaxMana;
 	plr[pnum]._pManaBase = plr[pnum]._pMana - (plr[pnum]._pMaxMana - plr[pnum]._pMaxManaBase);
 
 	CalcPlrInv(pnum, FALSE);

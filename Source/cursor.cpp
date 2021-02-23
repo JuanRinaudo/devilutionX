@@ -325,7 +325,7 @@ void CheckCursMove()
 	}
 	pcursinvitem = -1;
 	pcursplr = -1;
-	uitemflag = FALSE;
+	itemToShow = 0;
 	panelflag = FALSE;
 	trigflag = FALSE;
 

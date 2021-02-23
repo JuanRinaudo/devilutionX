@@ -619,8 +619,11 @@ void S_ScrollSSell(int idx)
 			break;
 		if (storehold[idx]._itype != ITYPE_NONE) {
 			iclr = COL_WHITE;
-			if (storehold[idx]._iMagical) {
+			if (storehold[idx]._iMagical == ITEM_QUALITY_MAGIC) {
 				iclr = COL_BLUE;
+			}
+			else if (storehold[idx]._iMagical == ITEM_QUALITY_UNIQUE) {
+				iclr = COL_GOLD;
 			}
 
 			if (!storehold[idx]._iStatFlag) {

@@ -16,12 +16,13 @@ BOOL jogging_opt = TRUE;
 TMenuItem sgSingleMenu[] = {
 	// clang-format off
 //	  dwFlags,       pszStr,         fnMenu
-	{ GMENU_ENABLED, "Save Game",     &gamemenu_save_game  },
-	{ GMENU_ENABLED, "Options",       &gamemenu_options    },
-	{ GMENU_ENABLED, "New Game",      &gamemenu_new_game   },
-	{ GMENU_ENABLED, "Load Game",     &gamemenu_load_game  },
-	{ GMENU_ENABLED, "Quit Game",     &gamemenu_quit_game  },
-	{ GMENU_ENABLED, NULL,            NULL }
+	{ GMENU_ENABLED, "Save Game",		&gamemenu_save_game  },
+	{ GMENU_ENABLED, "Options",			&gamemenu_options    },
+	{ GMENU_ENABLED, "Restart In Town", &gamemenu_restart_town },
+	{ GMENU_ENABLED, "New Game",		&gamemenu_new_game   },
+	{ GMENU_ENABLED, "Load Game",		&gamemenu_load_game  },
+	{ GMENU_ENABLED, "Quit Game",		&gamemenu_quit_game  },
+	{ GMENU_ENABLED, NULL,              NULL }
 	// clang-format on
 };
 /** Contains the game menu items of the multi player menu. */
@@ -88,6 +89,7 @@ static void gamemenu_update_single(TMenuItem *pMenuItems)
 		enable = TRUE;
 
 	gmenu_enable(&sgSingleMenu[0], enable);
+	gmenu_enable(&sgSingleMenu[2], !enable);
 }
 
 static void gamemenu_update_multi(TMenuItem *pMenuItems)
@@ -210,6 +212,11 @@ void gamemenu_save_game(BOOL bActivate)
 
 void gamemenu_restart_town(BOOL bActivate)
 {
+	if (!(plr[myplr]._pmode == PM_DEATH || deathflag)) {
+		gamemenu_off();
+		return;
+	}
+
 	NetSendCmd(TRUE, CMD_RETOWN);
 }
 

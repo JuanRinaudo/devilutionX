@@ -32,7 +32,7 @@ BYTE *pTalkBtns;
 BOOL pstrjust[4];
 int pnumlines;
 BOOL pinfoflag;
-BOOL talkbtndown[3];
+BOOL talkbtndown[MAX_PLRS - 1];
 int pSpell;
 BYTE *pManaBuff;
 char infoclr;

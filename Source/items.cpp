@@ -10,9 +10,8 @@
 DEVILUTION_BEGIN_NAMESPACE
 
 int itemactive[MAXITEMS];
-BOOL uitemflag;
+ItemStruct *itemToShow;
 int itemavail[MAXITEMS];
-ItemStruct curruitem;
 ItemGetRecordStruct itemrecord[MAXITEMS];
 /** Contains the items on ground in the current game. */
 ItemStruct item[MAXITEMS + 1];
@@ -671,7 +670,7 @@ void InitItems()
 			items_42390F();
 	}
 
-	uitemflag = FALSE;
+	itemToShow = 0;
 }
 
 void CalcPlrItemVals(int p, BOOL Loadgfx)
@@ -2525,7 +2524,7 @@ int RndItem(int m)
 	return ril[r] + 1;
 }
 
-int RndUItem(int m)
+int RndUItemLevel(int m, int curlv)
 {
 	int i, ri;
 	int ril[512];
@@ -2534,7 +2533,6 @@ int RndUItem(int m)
 	if (m != -1 && (monster[m].MData->mTreasure & 0x8000) != 0 && gbMaxPlayers == 1)
 		return -1 - (monster[m].MData->mTreasure & 0xFFF);
 
-	int curlv = items_get_currlevel();
 	ri = 0;
 	for (i = 0; AllItemsList[i].iLoc != ILOC_INVALID; i++) {
 		if (ShouldSkipItem(i))
@@ -2569,6 +2567,11 @@ int RndUItem(int m)
 	}
 
 	return ril[random_(25, ri)];
+}
+
+int RndUItem(int m)
+{
+	return RndUItemLevel(m, items_get_currlevel());
 }
 
 int RndAllItems()
@@ -2870,6 +2873,26 @@ void CreateRndItem(int x, int y, BOOL onlygood, BOOL sendmsg, BOOL delta)
 		itemavail[0] = itemavail[MAXITEMS - numitems - 1];
 		itemactive[numitems] = ii;
 		SetupAllItems(ii, idx, AdvanceRndSeed(), 2 * curlv, 1, onlygood, FALSE, delta);
+		if (sendmsg)
+			NetSendCmdDItem(FALSE, ii);
+		if (delta)
+			DeltaAddItem(ii);
+		numitems++;
+	}
+}
+
+void CreateAnyItemRandom(int x, int y, int level, bool sendmsg, bool delta)
+{
+	int idx, ii;
+
+	idx = RndUItemLevel(-1, level);
+
+	if (numitems < MAXITEMS) {
+		ii = itemavail[0];
+		GetSuperItemSpace(x, y, ii);
+		itemavail[0] = itemavail[MAXITEMS - numitems - 1];
+		itemactive[numitems] = ii;
+		SetupAllItems(ii, idx, AdvanceRndSeed(), 2 * level, 1, true, FALSE, delta);
 		if (sendmsg)
 			NetSendCmdDItem(FALSE, ii);
 		if (delta)
@@ -4080,38 +4103,175 @@ void DrawULine(int y)
 		memcpy(dst, src, 266); // BUGFIX: should be 267
 }
 
-void DrawUniqueInfo()
+void DrawItemInfo()
 {
 	int uid, y;
 
-	if ((!chrflag && !questlog) || SCREEN_WIDTH >= SPANEL_WIDTH * 3) {
-		uid = curruitem._iUid;
-		DrawUTextBack();
-		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, 2, TRUE, UniqueItemList[uid].UIName, 3);
-		DrawULine(5);
-		PrintItemPower(UniqueItemList[uid].UIPower1, &curruitem);
-		y = 6 - UniqueItemList[uid].UINumPL + 8;
-		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, 0);
-		if (UniqueItemList[uid].UINumPL > 1) {
-			PrintItemPower(UniqueItemList[uid].UIPower2, &curruitem);
-			PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 2, TRUE, tempstr, 0);
+	DrawUTextBack();
+	PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, 1, TRUE, itemToShow->_iIdentified ? itemToShow->_iIName : itemToShow->_iName, GetColorByRarity(itemToShow->_iMagical));
+
+	char str, dex;
+	BYTE mag;
+
+	y = 2;
+	if (itemToShow->_iClass == ICLASS_WEAPON) {
+		if (itemToShow->_iMinDam == itemToShow->_iMaxDam) {
+			if (itemToShow->_iMaxDur == DUR_INDESTRUCTIBLE)
+				sprintf(tempstr, "damage: %i  Indestructible", itemToShow->_iMinDam);
+			else
+				sprintf(tempstr, "damage: %i  Dur: %i/%i", itemToShow->_iMinDam, itemToShow->_iDurability, itemToShow->_iMaxDur);
+		} else {
+			if (itemToShow->_iMaxDur == DUR_INDESTRUCTIBLE)
+				sprintf(tempstr, "damage: %i-%i  Indestructible", itemToShow->_iMinDam, itemToShow->_iMaxDam);
+			else
+				sprintf(tempstr, "damage: %i-%i  Dur: %i/%i", itemToShow->_iMinDam, itemToShow->_iMaxDam, itemToShow->_iDurability, itemToShow->_iMaxDur);
 		}
-		if (UniqueItemList[uid].UINumPL > 2) {
-			PrintItemPower(UniqueItemList[uid].UIPower3, &curruitem);
-			PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 4, TRUE, tempstr, 0);
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iClass == ICLASS_ARMOR) {
+		if (itemToShow->_iMaxDur == DUR_INDESTRUCTIBLE)
+			sprintf(tempstr, "armor: %i  Indestructible", itemToShow->_iAC);
+		else
+			sprintf(tempstr, "armor: %i  Dur: %i/%i", itemToShow->_iAC, itemToShow->_iDurability, itemToShow->_iMaxDur);
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_STAFF && itemToShow->_iMaxCharges) {
+		if (itemToShow->_iMinDam == itemToShow->_iMaxDam)
+			sprintf(tempstr, "dam: %i  Dur: %i/%i", itemToShow->_iMinDam, itemToShow->_iDurability, itemToShow->_iMaxDur);
+		else
+			sprintf(tempstr, "dam: %i-%i  Dur: %i/%i", itemToShow->_iMinDam, itemToShow->_iMaxDam, itemToShow->_iDurability, itemToShow->_iMaxDur);
+		sprintf(tempstr, "Charges: %i/%i", itemToShow->_iCharges, itemToShow->_iMaxCharges);
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMagical == ITEM_QUALITY_UNIQUE) {
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, "unique item", COL_WHITE);
+		y++;
+	}
+
+	if (itemToShow->_iMiscId == IMISC_SCROLL) {
+		strcpy(tempstr, "Right-click to read");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_SCROLLT) {
+		strcpy(tempstr, "Right-click to read, then");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+		strcpy(tempstr, "left-click to target");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId >= IMISC_USEFIRST && itemToShow->_iMiscId <= IMISC_USELAST) {
+		PrintItemOil(itemToShow->_iMiscId);
+		strcpy(tempstr, "Right-click to use");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId > IMISC_OILFIRST && itemToShow->_iMiscId < IMISC_OILLAST) {
+		PrintItemOil(itemToShow->_iMiscId);
+		strcpy(tempstr, "Right click to use");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId > IMISC_RUNEFIRST && itemToShow->_iMiscId < IMISC_RUNELAST) {
+		PrintItemOil(itemToShow->_iMiscId);
+		strcpy(tempstr, "Right click to use");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_BOOK) {
+		strcpy(tempstr, "Right-click to read");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_NOTE) {
+		strcpy(tempstr, "Right click to read");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_MAPOFDOOM) {
+		strcpy(tempstr, "Right-click to view");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_EAR) {
+		sprintf(tempstr, "Level : %i", itemToShow->_ivalue);
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	if (itemToShow->_iMiscId == IMISC_AURIC) {
+		sprintf(tempstr, "Doubles gold capacity");
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+
+	mag = itemToShow->_iMinMag;
+	dex = itemToShow->_iMinDex;
+	str = itemToShow->_iMinStr;
+	if (mag + dex + str) {
+		strcpy(tempstr, "Required:");
+		if (itemToShow->_iMinStr)
+			sprintf(tempstr, "%s %i Str", tempstr, itemToShow->_iMinStr);
+		if (itemToShow->_iMinMag)
+			sprintf(tempstr, "%s %i Mag", tempstr, itemToShow->_iMinMag);
+		if (itemToShow->_iMinDex)
+			sprintf(tempstr, "%s %i Dex", tempstr, itemToShow->_iMinDex);
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+		y++;
+	}
+	pinfoflag = TRUE;
+
+	y++;
+	DrawULine(y);
+
+	if (itemToShow->_iIdentified) {
+		if (itemToShow->_iMagical == ITEM_QUALITY_UNIQUE && itemToShow->_iIdentified) {
+			if ((!chrflag && !questlog) || SCREEN_WIDTH >= SPANEL_WIDTH * 3) {
+				uid = itemToShow->_iUid;
+				PrintItemPower(UniqueItemList[uid].UIPower1, itemToShow);
+				y = 6 - UniqueItemList[uid].UINumPL + 8;
+				PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+				if (UniqueItemList[uid].UINumPL > 1) {
+					PrintItemPower(UniqueItemList[uid].UIPower2, itemToShow);
+					PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 2, TRUE, tempstr, COL_WHITE);
+				}
+				if (UniqueItemList[uid].UINumPL > 2) {
+					PrintItemPower(UniqueItemList[uid].UIPower3, itemToShow);
+					PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 4, TRUE, tempstr, COL_WHITE);
+				}
+				if (UniqueItemList[uid].UINumPL > 3) {
+					PrintItemPower(UniqueItemList[uid].UIPower4, itemToShow);
+					PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 6, TRUE, tempstr, COL_WHITE);
+				}
+				if (UniqueItemList[uid].UINumPL > 4) {
+					PrintItemPower(UniqueItemList[uid].UIPower5, itemToShow);
+					PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 8, TRUE, tempstr, COL_WHITE);
+				}
+				if (UniqueItemList[uid].UINumPL > 5) {
+					PrintItemPower(UniqueItemList[uid].UIPower6, itemToShow);
+					PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 10, TRUE, tempstr, COL_WHITE);
+				}
+			}
+		} else {
+			y = 13;
+			if (itemToShow->_iPrePower != -1) {
+				PrintItemPower(itemToShow->_iPrePower, itemToShow);
+				PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+				y += 2;
+			}
+			if (itemToShow->_iSufPower != -1) {
+				PrintItemPower(itemToShow->_iSufPower, itemToShow);
+				PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, tempstr, COL_WHITE);
+				y += 2;
+			}
 		}
-		if (UniqueItemList[uid].UINumPL > 3) {
-			PrintItemPower(UniqueItemList[uid].UIPower4, &curruitem);
-			PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 6, TRUE, tempstr, 0);
-		}
-		if (UniqueItemList[uid].UINumPL > 4) {
-			PrintItemPower(UniqueItemList[uid].UIPower5, &curruitem);
-			PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 8, TRUE, tempstr, 0);
-		}
-		if (UniqueItemList[uid].UINumPL > 5) {
-			PrintItemPower(UniqueItemList[uid].UIPower6, &curruitem);
-			PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y + 10, TRUE, tempstr, 0);
-		}
+	} else if (itemToShow->_iMagical != ITEM_QUALITY_NORMAL) {
+		y = 13;
+		PrintUString(0 + RIGHT_PANEL - SPANEL_WIDTH, y, TRUE, "Not Identified", COL_WHITE);
+		y += 2;
 	}
 }
 
@@ -4162,127 +4322,6 @@ void PrintItemMisc(ItemStruct *x)
 		sprintf(tempstr, "Doubles gold capacity");
 		AddPanelString(tempstr, TRUE);
 	}
-}
-
-void PrintItemDetails(ItemStruct *x)
-{
-	char str, dex;
-	BYTE mag;
-
-	if (x->_iClass == ICLASS_WEAPON) {
-		if (x->_iMinDam == x->_iMaxDam) {
-			if (x->_iMaxDur == DUR_INDESTRUCTIBLE)
-				sprintf(tempstr, "damage: %i  Indestructible", x->_iMinDam);
-			else
-				sprintf(tempstr, "damage: %i  Dur: %i/%i", x->_iMinDam, x->_iDurability, x->_iMaxDur);
-		} else {
-			if (x->_iMaxDur == DUR_INDESTRUCTIBLE)
-				sprintf(tempstr, "damage: %i-%i  Indestructible", x->_iMinDam, x->_iMaxDam);
-			else
-				sprintf(tempstr, "damage: %i-%i  Dur: %i/%i", x->_iMinDam, x->_iMaxDam, x->_iDurability, x->_iMaxDur);
-		}
-		AddPanelString(tempstr, TRUE);
-	}
-	if (x->_iClass == ICLASS_ARMOR) {
-		if (x->_iMaxDur == DUR_INDESTRUCTIBLE)
-			sprintf(tempstr, "armor: %i  Indestructible", x->_iAC);
-		else
-			sprintf(tempstr, "armor: %i  Dur: %i/%i", x->_iAC, x->_iDurability, x->_iMaxDur);
-		AddPanelString(tempstr, TRUE);
-	}
-	if (x->_iMiscId == IMISC_STAFF && x->_iMaxCharges) {
-		if (x->_iMinDam == x->_iMaxDam)
-			sprintf(tempstr, "dam: %i  Dur: %i/%i", x->_iMinDam, x->_iDurability, x->_iMaxDur);
-		else
-			sprintf(tempstr, "dam: %i-%i  Dur: %i/%i", x->_iMinDam, x->_iMaxDam, x->_iDurability, x->_iMaxDur);
-		sprintf(tempstr, "Charges: %i/%i", x->_iCharges, x->_iMaxCharges);
-		AddPanelString(tempstr, TRUE);
-	}
-	if (x->_iPrePower != -1) {
-		PrintItemPower(x->_iPrePower, x);
-		AddPanelString(tempstr, TRUE);
-	}
-	if (x->_iSufPower != -1) {
-		PrintItemPower(x->_iSufPower, x);
-		AddPanelString(tempstr, TRUE);
-	}
-	if (x->_iMagical == ITEM_QUALITY_UNIQUE) {
-		AddPanelString("unique item", TRUE);
-		uitemflag = TRUE;
-		curruitem = *x;
-	}
-	PrintItemMisc(x);
-	mag = x->_iMinMag;
-	dex = x->_iMinDex;
-	str = x->_iMinStr;
-	if (mag + dex + str) {
-		strcpy(tempstr, "Required:");
-		if (x->_iMinStr)
-			sprintf(tempstr, "%s %i Str", tempstr, x->_iMinStr);
-		if (x->_iMinMag)
-			sprintf(tempstr, "%s %i Mag", tempstr, x->_iMinMag);
-		if (x->_iMinDex)
-			sprintf(tempstr, "%s %i Dex", tempstr, x->_iMinDex);
-		AddPanelString(tempstr, TRUE);
-	}
-	pinfoflag = TRUE;
-}
-
-void PrintItemDur(ItemStruct *x)
-{
-	char str, dex;
-	BYTE mag;
-
-	if (x->_iClass == ICLASS_WEAPON) {
-		if (x->_iMinDam == x->_iMaxDam) {
-			if (x->_iMaxDur == DUR_INDESTRUCTIBLE)
-				sprintf(tempstr, "damage: %i  Indestructible", x->_iMinDam);
-			else
-				sprintf(tempstr, "damage: %i  Dur: %i/%i", x->_iMinDam, x->_iDurability, x->_iMaxDur);
-		} else {
-			if (x->_iMaxDur == DUR_INDESTRUCTIBLE)
-				sprintf(tempstr, "damage: %i-%i  Indestructible", x->_iMinDam, x->_iMaxDam);
-			else
-				sprintf(tempstr, "damage: %i-%i  Dur: %i/%i", x->_iMinDam, x->_iMaxDam, x->_iDurability, x->_iMaxDur);
-		}
-		AddPanelString(tempstr, TRUE);
-		if (x->_iMiscId == IMISC_STAFF && x->_iMaxCharges) {
-			sprintf(tempstr, "Charges: %i/%i", x->_iCharges, x->_iMaxCharges);
-			AddPanelString(tempstr, TRUE);
-		}
-		if (x->_iMagical != ITEM_QUALITY_NORMAL)
-			AddPanelString("Not Identified", TRUE);
-	}
-	if (x->_iClass == ICLASS_ARMOR) {
-		if (x->_iMaxDur == DUR_INDESTRUCTIBLE)
-			sprintf(tempstr, "armor: %i  Indestructible", x->_iAC);
-		else
-			sprintf(tempstr, "armor: %i  Dur: %i/%i", x->_iAC, x->_iDurability, x->_iMaxDur);
-		AddPanelString(tempstr, TRUE);
-		if (x->_iMagical != ITEM_QUALITY_NORMAL)
-			AddPanelString("Not Identified", TRUE);
-		if (x->_iMiscId == IMISC_STAFF && x->_iMaxCharges) {
-			sprintf(tempstr, "Charges: %i/%i", x->_iCharges, x->_iMaxCharges);
-			AddPanelString(tempstr, TRUE);
-		}
-	}
-	if (x->_itype == ITYPE_RING || x->_itype == ITYPE_AMULET)
-		AddPanelString("Not Identified", TRUE);
-	PrintItemMisc(x);
-	str = x->_iMinStr;
-	mag = x->_iMinMag;
-	dex = x->_iMinDex;
-	if (str + mag + dex) {
-		strcpy(tempstr, "Required:");
-		if (x->_iMinStr)
-			sprintf(tempstr, "%s %i Str", tempstr, x->_iMinStr);
-		if (x->_iMinMag)
-			sprintf(tempstr, "%s %i Mag", tempstr, x->_iMinMag);
-		if (x->_iMinDex)
-			sprintf(tempstr, "%s %i Dex", tempstr, x->_iMinDex);
-		AddPanelString(tempstr, TRUE);
-	}
-	pinfoflag = TRUE;
 }
 
 void UseItem(int p, int Mid, int spl)
@@ -5397,6 +5436,18 @@ int ItemNoFlippy()
 	item[r]._iSelFlag = 1;
 
 	return r;
+}
+
+char GetColorByRarity(char rarity)
+{
+	if (rarity == ITEM_QUALITY_MAGIC) {
+		return COL_BLUE;
+	} else if (rarity == ITEM_QUALITY_UNIQUE) {
+		return COL_GOLD;
+	}
+	else {
+		return COL_WHITE;
+	}
 }
 
 void CreateSpellBook(int x, int y, int ispell, BOOL sendmsg, BOOL delta)

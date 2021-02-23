@@ -12,6 +12,8 @@ extern BOOL juaneditorflag;
 void InitJuanEditor();
 void DrawJuanEditor();
 void CheckJuanEditorBtns();
+BOOL PressKeysJuanEditor(int vkey);
+BOOL PressCharJuanEditor(int vkey);
 
 #ifdef __cplusplus
 }
