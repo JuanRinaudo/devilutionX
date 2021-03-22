@@ -19,6 +19,7 @@ extern BOOLEAN sgbSaveSoundOn;
 extern MonsterStruct monster[MAXMONSTERS];
 extern CMonster Monsters[MAX_LVLMTYPES];
 extern int nummtypes;
+extern int monsterDensityModifier;
 
 void InitLevelMonsters();
 void GetLevelMTypes();

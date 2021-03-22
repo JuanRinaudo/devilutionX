@@ -10,10 +10,13 @@ DEVILUTION_BEGIN_NAMESPACE
 BYTE *pEditorPanel;
 BOOL juaneditorflag;
 
+int commandIndex = -1;
+char debugInputBuffer[ArrayCount(juanMenuItems) - 1][EDITOR_BUFFER_SIZE];
+int debugInputCount[ArrayCount(juanMenuItems) - 1];
 
-static void LevelUp(void *value)
+static void LevelUp(int commandIndex)
 {
-	char *valueAsChar = (char *)value;
+	char *valueAsChar = (char *)debugInputBuffer[commandIndex];
 	int levelUpCount = atoi(valueAsChar);
 	if (levelUpCount == 0) {
 		levelUpCount = 1;
@@ -24,7 +27,7 @@ static void LevelUp(void *value)
 	}
 }
 
-static void LevelUpToMax(void *value)
+static void LevelUpToMax(int commandIndex)
 {
 	int currentLevel = plr[myplr].plrlevel;
 	int neededLevels = MAXCHARLEVEL - currentLevel;
@@ -33,23 +36,23 @@ static void LevelUpToMax(void *value)
 	}
 }
 
-static void CreateUnique(void *value)
+static void CreateUnique(int commandIndex)
 {
-	char *valueAsChar = (char *)value;
+	char *valueAsChar = (char *)debugInputBuffer[commandIndex];
 	int uniqueIndex = atoi(valueAsChar);
 
 	SpawnUnique(uniqueIndex, plr[myplr]._px, plr[myplr]._py);
 }
 
-static void CreateRandomItem(void *value)
+static void CreateRandomItem(int commandIndex)
 {
-	char *valueAsChar = (char *)value;
+	char *valueAsChar = (char *)debugInputBuffer[commandIndex];
 	int levelIndex = atoi(valueAsChar);
 
 	CreateAnyItemRandom(plr[myplr]._px, plr[myplr]._py, levelIndex, true, true);
 }
 
-static void ClearFloorItems(void *value)
+static void ClearFloorItems(int commandIndex)
 {
 	numitems = 0;
 
@@ -62,21 +65,37 @@ static void ClearFloorItems(void *value)
 	}
 }
 
+static void SetMonsterDensity(int commandIndex)
+{
+	monsterDensityModifier++;
+	if (monsterDensityModifier > 8) {
+		monsterDensityModifier = 1;
+	}
+
+	debugInputBuffer[commandIndex][0] = '0' + monsterDensityModifier;
+}
+
 JMenuItem juanMenuItems[] = {
 	// clang-format off
-//	  dwFlags,							 pszStr,			 fnMenu
-	{ CFLAG_HAS_INPUT | CFLAG_NUMERIC , "Level up"          , &LevelUp			 },
-	{ 0								  , "Level to max"      , &LevelUpToMax	     },
-	{ CFLAG_HAS_INPUT | CFLAG_NUMERIC , "Create unique"     , &CreateUnique	     },
-	{ CFLAG_HAS_INPUT | CFLAG_NUMERIC , "Create random"     , &CreateRandomItem  },
-	{ 0                               , "Clear floor items" , &ClearFloorItems   },
-	{ 0							      , NULL		        , NULL				 }
+//	  dwFlags,							pszStr,	    		    fnMenu
+	{ CFLAG_HAS_INPUT | CFLAG_NUMERIC , "Level up"            , &LevelUp		   },
+	{ 0								  , "Level to max"        , &LevelUpToMax	   },
+	{ CFLAG_HAS_INPUT | CFLAG_NUMERIC , "Create unique"       , &CreateUnique	   },
+	{ CFLAG_HAS_INPUT | CFLAG_NUMERIC , "Create random"       , &CreateRandomItem  },
+	{ 0                               , "Clear floor items"   , &ClearFloorItems   },
+	{ 0                               , "Set monster density" , &SetMonsterDensity },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   },
+	{ 0							      , NULL		          , NULL			   }
 	// clang-format on
 };
-
-int commandIndex = -1;
-char debugInputBuffer[ArrayCount(juanMenuItems) - 1][EDITOR_BUFFER_SIZE];
-int debugInputCount[ArrayCount(juanMenuItems) - 1];
 
 void InitJuanEditor()
 {
@@ -159,7 +178,7 @@ void DrawJuanEditor()
 			commandIndex = index;
 		}
 
-		BOOL hasInput = (item->dwFlags & CFLAG_HAS_INPUT) > 0;
+		BOOL hasInput = (item->dwFlags & CFLAG_HAS_INPUT) > 0 || debugInputBuffer[index][0] != '-';
 		char color = commandIndex == index ? COL_RED : COL_WHITE;
 		DrawString(32, posY, item->pszStr, color);
 		if (hasInput) {
@@ -177,7 +196,7 @@ void CheckJuanEditorBtns()
 	JMenuItem *item = juanMenuItems;
 	while (item->fnMenu) {
 		if (MouseX > 32 && MouseX < 200 && MouseY > posY - 16 && MouseY < posY) {
-			item->fnMenu(debugInputBuffer[commandIndex]);
+			item->fnMenu(commandIndex);
 		}
 		posY += 20;
 		item++;
@@ -206,9 +225,12 @@ BOOL PressKeysJuanEditor(int vkey)
 		juaneditorflag = false;
 		break;
 	case DVL_VK_RETURN:
-		juanMenuItems[commandIndex].fnMenu(debugInputBuffer[commandIndex]);
+		juanMenuItems[commandIndex].fnMenu(commandIndex);
 		break;
 	case DVL_VK_BACK:
+		if ((juanMenuItems[commandIndex].dwFlags & CFLAG_HAS_INPUT) == 0)
+			return false;
+
 		if (debugInputCount[commandIndex] > 0) {
 			debugInputCount[commandIndex]--;
 			debugInputBuffer[commandIndex][debugInputCount[commandIndex]] = debugInputCount[commandIndex] == 0 ? '-' : '\0';
@@ -220,11 +242,14 @@ BOOL PressCharJuanEditor(int vkey)
 {
 	if (!juaneditorflag)
 		return false;
+	
+	if ((juanMenuItems[commandIndex].dwFlags & CFLAG_HAS_INPUT) == 0)
+		return false;
 
 	if (commandIndex > -1 && vkey >= ' ' && vkey <= 'z') {
 		BOOL numericInput = (juanMenuItems[commandIndex].dwFlags & CFLAG_NUMERIC) > 0;
 		if (numericInput && (vkey < '0' || vkey > '9')) {
-			return true;
+			return false;
 		}
 
 		if (debugInputCount[commandIndex] < EDITOR_BUFFER_SIZE) {

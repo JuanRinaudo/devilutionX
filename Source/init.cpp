@@ -172,6 +172,7 @@ void init_archives()
 	hfopt1_mpq = init_test_access("hfopt1.mpq", "DiabloInstall", 8600, FS_PC);
 	hfopt2_mpq = init_test_access("hfopt2.mpq", "DiabloInstall", 8610, FS_PC);
 	devilutionx_mpq = init_test_access("devilutionx.mpq", "DiabloInstall", 9000, FS_PC);
+	devilutionx_mpq = init_test_access("betterDiablo.mpq", "DiabloInstall", 10000, FS_PC);
 }
 
 void init_create_window()

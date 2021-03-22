@@ -25,6 +25,7 @@ CMonster Monsters[MAX_LVLMTYPES];
 int monstimgtot;
 int uniquetrans;
 int nummtypes;
+int monsterDensityModifier = 1;
 
 /** Maps from walking path step to facing direction. */
 const char plr2monst[9] = { 0, 5, 3, 7, 1, 4, 6, 0, 2 };
@@ -1156,11 +1157,11 @@ void InitMonsters()
 		while (nummonsters < totalmonsters) {
 			mtype = scattertypes[random_(95, numscattypes)];
 			if (currlevel == 1 || random_(95, 2) == 0)
-				na = 1;
+				na = 1 * monsterDensityModifier;
 			else if (currlevel == 2 || currlevel >= 21 && currlevel <= 24)
-				na = random_(95, 2) + 2;
+				na = random_(95, 2 * monsterDensityModifier) + 2 * monsterDensityModifier;
 			else
-				na = random_(95, 3) + 3;
+				na = random_(95, 3 * monsterDensityModifier) + 3 * monsterDensityModifier;
 			PlaceGroup(mtype, na, 0, 0);
 		}
 	}

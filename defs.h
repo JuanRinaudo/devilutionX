@@ -58,7 +58,7 @@
 #define MAXBELTITEMS			8
 #define MAXLIGHTS				32
 #define MAXMISSILES				125
-#define MAXMONSTERS				200
+#define MAXMONSTERS				500
 #define MAXOBJECTS				127
 #define MAXPORTAL				MAX_PLRS
 

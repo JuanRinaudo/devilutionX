@@ -68,7 +68,7 @@ void FreeInvGFX()
 
 void InitInv()
 {
-	pBigInvCels = LoadFileInMem("Data\\Inv\\bigInv.CEL", NULL);
+	pBigInvCels = LoadFileInMem("bigInv.CEL", NULL);
 
 	ConfigInventoryPositions(SLOTXY_HEAD_FIRST			, 132,  31, InvLocSizes[INVLOC_HEAD].X, InvLocSizes[INVLOC_HEAD].Y); // Helmet
 	ConfigInventoryPositions(SLOTXY_RING_LEFT			,  90, 160, InvLocSizes[INVLOC_RING_LEFT].X, InvLocSizes[INVLOC_RING_LEFT].Y); // Left ring

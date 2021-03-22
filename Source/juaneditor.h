@@ -8,6 +8,7 @@ extern "C" {
 #endif
 
 extern BOOL juaneditorflag;
+extern JMenuItem juanMenuItems[16];
 
 void InitJuanEditor();
 void DrawJuanEditor();

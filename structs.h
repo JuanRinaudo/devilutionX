@@ -1003,7 +1003,7 @@ typedef struct TMenuItem {
 typedef struct JMenuItem {
 	DWORD dwFlags;
 	const char *pszStr;
-	void (*fnMenu)(void*);
+	void (*fnMenu)(int);
 } JMenuItem;
 
 

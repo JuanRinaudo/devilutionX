@@ -2403,10 +2403,11 @@ typedef enum _copyprot_results {
 } _copyprot_results;
 
 typedef enum text_color {
-	COL_WHITE = 0x0,
-	COL_BLUE  = 0x1,
-	COL_RED   = 0x2,
-	COL_GOLD  = 0x3,
+	COL_WHITE  = 0x0,
+	COL_BLUE   = 0x1,
+	COL_RED    = 0x2,
+	COL_GOLD   = 0x3,
+	COL_YELLOW = 0x4, 
 } text_color;
 
 typedef enum item_color {

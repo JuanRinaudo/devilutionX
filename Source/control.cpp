@@ -550,6 +550,14 @@ void PrintChar(int sx, int sy, int nCel, char col)
 			tbl[i] = pix;
 		}
 		break;
+	case COL_YELLOW:
+		for (i = 0; i < 256; i++) {
+			pix = i;
+			if (pix >= PAL16_GRAY)
+				pix -= PAL16_GRAY - PAL16_YELLOW;
+			tbl[i] = pix;
+		}
+		break;
 	default:
 		for (i = 0; i < 256; i++) {
 			pix = i;
